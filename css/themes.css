@@ -1,0 +1,167 @@
+/* Khutbah Live Translator — extracted from index.html v4.6.1-baseline
+   Refactor Task 5 Phase A. Rules moved verbatim; no visual redesign. */
+    /* ═══════════════════════════════════════════
+       THEME SKINS — CSS variable overrides
+       ═══════════════════════════════════════════ */
+
+    /* Default: Masjid Night (no override needed, uses :root) */
+
+    /* Desert Sand */
+    [data-skin="desert-sand"]{
+        --bg-deep:#1e0f08;--bg-mid:#2c1810;--bg-light:#4a2c17;
+        --gold:#c8956c;--gold-dim:rgba(200,149,108,.15);--gold-glow:rgba(200,149,108,.35);
+        --cream:#f5ead5;--cream-dim:#e8dcc4;
+        --text:#f0e6d5;--text-dim:rgba(240,230,213,.55);
+    }
+    [data-skin="desert-sand"] body{background:var(--bg-deep)}
+    [data-skin="desert-sand"] body::before{
+        opacity:.03;
+        background-image:
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(60deg,rgba(200,149,108,.35) 25%,transparent 25.5%,transparent 75%,rgba(200,149,108,.35) 75%,rgba(200,149,108,.35)),
+            linear-gradient(60deg,rgba(200,149,108,.35) 25%,transparent 25.5%,transparent 75%,rgba(200,149,108,.35) 75%,rgba(200,149,108,.35));
+        background-size:40px 70px;
+    }
+
+    /* Midnight Blue */
+    [data-skin="midnight-blue"]{
+        --bg-deep:#080e1a;--bg-mid:#0f1d38;--bg-light:#1a3058;
+        --gold:#8ab4f8;--gold-dim:rgba(138,180,248,.12);--gold-glow:rgba(138,180,248,.3);
+        --cream:#e8edf5;--cream-dim:#d0d8e8;
+        --text:#e0e8f5;--text-dim:rgba(224,232,245,.55);
+    }
+    [data-skin="midnight-blue"] body{background:var(--bg-deep)}
+    [data-skin="midnight-blue"] body::before{
+        opacity:.025;
+        background-image:
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(60deg,rgba(138,180,248,.25) 25%,transparent 25.5%,transparent 75%,rgba(138,180,248,.25) 75%,rgba(138,180,248,.25)),
+            linear-gradient(60deg,rgba(138,180,248,.25) 25%,transparent 25.5%,transparent 75%,rgba(138,180,248,.25) 75%,rgba(138,180,248,.25));
+        background-size:40px 70px;
+    }
+    [data-skin="midnight-blue"] .mic.live{
+        background:linear-gradient(145deg,#1565c0,#1976d2);
+        border-color:rgba(100,160,255,.5);
+    }
+
+    /* Ottoman Rose */
+    [data-skin="ottoman-rose"]{
+        --bg-deep:#1a070e;--bg-mid:#2a0a14;--bg-light:#4a1225;
+        --gold:#d4a043;--gold-dim:rgba(212,160,67,.15);--gold-glow:rgba(212,160,67,.35);
+        --cream:#f5e8e0;--cream-dim:#e8d5cc;
+        --text:#f0e4dc;--text-dim:rgba(240,228,220,.55);
+    }
+    [data-skin="ottoman-rose"] body{background:var(--bg-deep)}
+    [data-skin="ottoman-rose"] body::before{
+        opacity:.03;
+        background-image:
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(60deg,rgba(212,160,67,.35) 25%,transparent 25.5%,transparent 75%,rgba(212,160,67,.35) 75%,rgba(212,160,67,.35)),
+            linear-gradient(60deg,rgba(212,160,67,.35) 25%,transparent 25.5%,transparent 75%,rgba(212,160,67,.35) 75%,rgba(212,160,67,.35));
+        background-size:40px 70px;
+    }
+    [data-skin="ottoman-rose"] .mic.live{
+        background:linear-gradient(145deg,#8b1a3a,#a52050);
+        border-color:rgba(200,100,120,.5);
+    }
+
+    /* Pure Light */
+    [data-skin="pure-light"]{
+        --bg-deep:#f5f0e6;--bg-mid:#e8e0d0;--bg-light:#d9cfbc;
+        --gold:#2d6b45;--gold-dim:rgba(45,107,69,.1);--gold-glow:rgba(45,107,69,.25);
+        --cream:#1a3025;--cream-dim:#2a4035;
+        --text:#1a2820;--text-dim:rgba(26,40,32,.55);
+    }
+    [data-skin="pure-light"] body{background:var(--bg-deep)}
+    [data-skin="pure-light"] body::before{
+        opacity:.04;
+        background-image:
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(60deg,rgba(45,107,69,.2) 25%,transparent 25.5%,transparent 75%,rgba(45,107,69,.2) 75%,rgba(45,107,69,.2)),
+            linear-gradient(60deg,rgba(45,107,69,.2) 25%,transparent 25.5%,transparent 75%,rgba(45,107,69,.2) 75%,rgba(45,107,69,.2));
+        background-size:40px 70px;
+    }
+    [data-skin="pure-light"] .tab{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
+    [data-skin="pure-light"] .tab.on{background:rgba(45,107,69,.1);border-color:rgba(45,107,69,.3)}
+    [data-skin="pure-light"] .panels{background:rgba(255,255,255,.6);border-color:rgba(0,0,0,.08)}
+    [data-skin="pure-light"] .lang-sel{background-color:rgba(255,255,255,.7);color:#1a2820}
+    [data-skin="pure-light"] .lang-sel option{background:#fff;color:#1a2820}
+    [data-skin="pure-light"] .set-group{background:rgba(255,255,255,.5);border-color:rgba(0,0,0,.06)}
+    [data-skin="pure-light"] .ayah-card{background:rgba(255,255,255,.5);border-color:rgba(0,0,0,.06)}
+    [data-skin="pure-light"] .dua-card{background:rgba(255,255,255,.5);border-color:rgba(0,0,0,.06)}
+    [data-skin="pure-light"] .c-card{background:rgba(255,255,255,.5);border-color:rgba(0,0,0,.06)}
+    [data-skin="pure-light"] .c-item{background:rgba(255,255,255,.5)}
+    [data-skin="pure-light"] .skin-chip{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08);color:rgba(26,40,32,.6)}
+    [data-skin="pure-light"] .skin-chip.on{border-color:var(--gold);background:rgba(45,107,69,.08);color:var(--gold)}
+    [data-skin="pure-light"] .ver{background:rgba(245,240,230,.85);color:rgba(26,40,32,.5)}
+    [data-skin="pure-light"] .mic.idle{background:linear-gradient(145deg,#d9cfbc,#e8e0d0);border-color:rgba(45,107,69,.4)}
+    [data-skin="pure-light"] .mic.live{background:linear-gradient(145deg,#c62828,#e53935);border-color:rgba(255,100,100,.5)}
+    [data-skin="pure-light"] .prayer-hero{background:linear-gradient(160deg,rgba(45,107,69,.1),rgba(232,224,208,.8),rgba(245,240,230,.95))}
+    [data-skin="pure-light"] .prayer-row.next{background:linear-gradient(135deg,rgba(45,107,69,.08),rgba(45,107,69,.03));border-color:rgba(45,107,69,.2)}
+    [data-skin="pure-light"] .fb-input{background:rgba(255,255,255,.7);border-color:rgba(0,0,0,.1);color:#1a2820}
+    [data-skin="pure-light"] .quran-nav select{background-color:rgba(255,255,255,.7);color:#1a2820}
+    [data-skin="pure-light"] .quran-nav select option{background:#fff;color:#1a2820}
+
+    /* Royal Purple */
+    [data-skin="royal-purple"]{
+        --bg-deep:#120a22;--bg-mid:#1a0a2e;--bg-light:#2d1452;
+        --gold:#c9a0dc;--gold-dim:rgba(201,160,220,.12);--gold-glow:rgba(201,160,220,.3);
+        --cream:#f0e8f5;--cream-dim:#dcd0e8;
+        --text:#ece4f2;--text-dim:rgba(236,228,242,.55);
+    }
+    [data-skin="royal-purple"] body{background:var(--bg-deep)}
+    [data-skin="royal-purple"] body::before{
+        opacity:.03;
+        background-image:
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(60deg,rgba(201,160,220,.25) 25%,transparent 25.5%,transparent 75%,rgba(201,160,220,.25) 75%,rgba(201,160,220,.25)),
+            linear-gradient(60deg,rgba(201,160,220,.25) 25%,transparent 25.5%,transparent 75%,rgba(201,160,220,.25) 75%,rgba(201,160,220,.25));
+        background-size:40px 70px;
+    }
+    [data-skin="royal-purple"] .mic.live{
+        background:linear-gradient(145deg,#7b1fa2,#9c27b0);
+        border-color:rgba(180,130,220,.5);
+    }
+
+    /* === RTL UI Mode (Arabic, Urdu) === */
+    [dir="rtl"] .hdr-en{direction:rtl}
+    [dir="rtl"] .lang-lbl{text-align:right}
+    [dir="rtl"] .sent{border-left:none;border-right:3px solid rgba(212,168,67,.35);border-radius:var(--radius-sm) 0 0 var(--radius-sm);text-align:right}
+    [dir="rtl"] .sent:last-child{border-right-color:var(--gold)}
+    [dir="rtl"] .set-row{flex-direction:row-reverse}
+    [dir="rtl"] .set-hint{padding-left:0;padding-right:2px;text-align:right}
+    [dir="rtl"] .c-item{flex-direction:row-reverse}
+    [dir="rtl"] .dua-title{flex-direction:row-reverse}
+    [dir="rtl"] .about-text{text-align:right}
+    [dir="rtl"] .dev-card p{text-align:right}
+    [dir="rtl"] .prayer-row{grid-template-columns:auto 1fr auto 28px}
+    [dir="rtl"] .prayer-row .p-icon{order:4}
+    [dir="rtl"] .prayer-row .p-name{order:3;text-align:right}
+    [dir="rtl"] .prayer-row .p-time{order:2;text-align:left}
+    [dir="rtl"] .prayer-row .p-iqama{order:1;text-align:left}
+    [dir="rtl"] .qibla-degree-label{direction:rtl}
+    [dir="rtl"] .prayer-hero-at{direction:rtl}
+    [dir="rtl"] .fb-grp{direction:rtl}
+    [dir="rtl"] .lang-sel{padding:0 10px 0 28px;background-position:left 10px center}
+    [dir="rtl"] .quran-nav select{padding:0 10px 0 28px;background-position:left 10px center}
+    [dir="rtl"] .prayer-method-sel{padding:11px 12px 11px 32px;background-position:left 12px center}
+    [dir="rtl"] .qa-reciter-select{padding:0 8px 0 24px;background-position:left 8px center}
+
+    @media(min-width:768px){
+        .shell{max-width:700px}
+    }

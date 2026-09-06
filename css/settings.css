@@ -1,0 +1,61 @@
+/* Khutbah Live Translator — extracted from index.html v4.6.1-baseline
+   Refactor Task 5 Phase A. Rules moved verbatim; no visual redesign. */
+    /* === Settings Panel === */
+    .settings-inner{
+        padding:clamp(16px,3vw,24px);overflow-y:auto;flex:1;
+        -webkit-overflow-scrolling:touch;
+    }
+    .set-group{
+        margin-bottom:20px;padding:18px;
+        background:rgba(255,255,255,.03);border-radius:var(--radius);
+        border:1px solid rgba(255,255,255,.06);
+    }
+    .set-title{
+        font-size:14px;font-weight:600;color:var(--gold);
+        margin-bottom:14px;letter-spacing:.5px;
+    }
+    .set-row{
+        display:flex;align-items:center;gap:12px;
+        margin-bottom:12px;font-size:13px;color:var(--cream-dim);
+        cursor:pointer;
+    }
+    .set-row input[type=checkbox]{
+        width:20px;height:20px;accent-color:var(--gold);flex-shrink:0;
+    }
+    .set-row input[type=range]{
+        flex:1;accent-color:var(--gold);height:6px;
+    }
+    .set-hint{
+        font-size:11px;color:var(--text-dim);line-height:1.5;
+        margin:-4px 0 8px 0;padding-left:2px;opacity:.7;
+    }
+    .set-save{
+        width:100%;padding:14px;border:none;border-radius:var(--radius-sm);
+        background:linear-gradient(145deg,rgba(212,168,67,.25),rgba(212,168,67,.12));
+        color:var(--gold);font-family:'Outfit',sans-serif;
+        font-size:14px;font-weight:600;cursor:pointer;
+        letter-spacing:.5px;
+    }
+    /* === Skin/Theme Selector === */
+    .skin-grid{
+        display:grid;grid-template-columns:1fr 1fr;gap:8px;
+    }
+    .skin-chip{
+        display:flex;align-items:center;gap:8px;
+        padding:10px 12px;border:1px solid rgba(255,255,255,.08);
+        border-radius:var(--radius-sm);background:rgba(255,255,255,.03);
+        color:var(--text-dim);font-family:'Outfit',sans-serif;
+        font-size:11px;font-weight:500;cursor:pointer;
+        transition:all .25s;text-align:left;
+    }
+    .skin-chip.on{
+        border-color:var(--gold);background:rgba(212,168,67,.1);
+        color:var(--gold);font-weight:600;
+    }
+    .skin-chip:active{transform:scale(.97)}
+    .skin-preview{
+        width:24px;height:24px;border-radius:6px;flex-shrink:0;
+        border:2px solid transparent;
+    }
+    .skin-chip.on .skin-preview{box-shadow:0 0 8px rgba(212,168,67,.4)}
+

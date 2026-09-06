@@ -1,0 +1,39 @@
+/* Khutbah Live Translator — extracted from index.html v4.6.1-baseline
+   Refactor Task 5 Phase A. Rules moved verbatim; no visual redesign. */
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        :root{
+            --bg-deep:#0a2818;--bg-mid:#0f3d24;--bg-light:#16532f;
+            --gold:#d4a843;--gold-dim:rgba(212,168,67,.15);--gold-glow:rgba(212,168,67,.35);
+            --cream:#faf5e8;--cream-dim:#f0ead6;
+            --text:#f4f0e4;--text-dim:rgba(244,240,228,.6);
+            --radius:16px;--radius-sm:10px;
+            --font-size:18px;
+            --safe-top:env(safe-area-inset-top,0px);
+            --safe-bottom:env(safe-area-inset-bottom,0px);
+        }
+        html{height:-webkit-fill-available}
+        body{
+            font-family:'Outfit',sans-serif;
+            background:var(--bg-deep);
+            min-height:100vh;min-height:-webkit-fill-available;
+            color:var(--text);
+            overscroll-behavior:none;
+            -webkit-font-smoothing:antialiased;
+        }
+
+    /* === Geometric Islamic pattern overlay === */
+    body::before{
+        content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+        opacity:.035;
+        background-image:
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(30deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(150deg,var(--gold) 12%,transparent 12.5%,transparent 87%,var(--gold) 87.5%,var(--gold)),
+            linear-gradient(60deg,rgba(212,168,67,.35) 25%,transparent 25.5%,transparent 75%,rgba(212,168,67,.35) 75%,rgba(212,168,67,.35)),
+            linear-gradient(60deg,rgba(212,168,67,.35) 25%,transparent 25.5%,transparent 75%,rgba(212,168,67,.35) 75%,rgba(212,168,67,.35));
+        background-size:40px 70px;
+        background-position:0 0,0 0,20px 35px,20px 35px,0 0,20px 35px;
+    }
+

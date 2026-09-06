@@ -1,0 +1,12 @@
+/* Khutbah Live Translator — extracted from index.html v4.6.1-baseline
+   Refactor Task 5 Phase A. Rules moved verbatim; no visual redesign. */
+    /* === Responsive === */
+    @media(max-width:380px){
+        .tabs{gap:2px;padding:0 6px}
+        .tab{padding:7px 2px;font-size:9px}
+        .lang-row{gap:6px}
+        .bar-btn{padding:8px 12px;font-size:11px}
+        .quran-nav{flex-direction:column}
+        .quran-nav #surahSelect,.quran-nav #quranTransSelect{flex:1}
+    }
+

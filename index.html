@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Khutbah">
+    <meta name="application-name" content="Khutbah Translator">
+    <meta name="theme-color" content="#0f3d24">
+    <meta name="description" content="Real-time Khutbah translation, Quran reader with transliteration, and Du'a collection for the Muslim Ummah.">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="google-site-verification" content="YWXvsc54hHOXhBEF-gUU-eCAcWeNx9vfpvCGzlWjHlI" />
+    <title>Khutbah Live Translator v5</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/translator.css">
+    <link rel="stylesheet" href="css/quran.css">
+    <link rel="stylesheet" href="css/dua.css">
+    <link rel="stylesheet" href="css/prayer.css">
+    <link rel="stylesheet" href="css/settings.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <div class="loader" id="loader"><div class="loader-ring"></div></div>
+
+<!-- Tutorial -->
+<div class="tut-overlay" id="tutOverlay">
+    <div class="tut-card">
+        <div class="tut-top">
+            <h2>بِسْمِ اللَّهِ</h2>
+            <p>Welcome to Khutbah Live Translator</p>
+        </div>
+        <div class="tut-steps" id="tutSteps">
+            <!-- Step 0: Language Selection (First Time Only) -->
+            <div class="tut-step on" data-s="0">
+                <div class="tut-icon">🌍</div>
+                <div class="tut-title" data-i18n="tutLangSelectTitle">Choose Your Language</div>
+                <div class="tut-desc" data-i18n="tutLangSelectDesc">Select your preferred interface language. This changes the app menus and buttons to your language. You can change this later in Settings.</div>
+                <div class="tut-lang-select-wrap">
+                    <select id="tutLangSelect" class="lang-sel tut-lang-select" onchange="onTutLangSelect(this.value)">
+                        <!-- Dynamically populated by initAvailableLangs() -->
+                        <option value="">Loading languages...</option>
+                    </select>
+                </div>
+                <div class="tut-tip"><strong>💡</strong> <span data-i18n="tutLangSelectTip">You can also change the sermon translation languages separately in the Translator tab.</span></div>
+            </div>
+            <div class="tut-step" data-s="1">
+                <div class="tut-icon">🕌</div>
+                <div class="tut-title" data-i18n="tutWelcomeTitle">Welcome, Brother/Sister!</div>
+                <div class="tut-desc" data-i18n="tutWelcomeDesc">This app translates Friday sermons (Khutbah) in real-time, helping Muslims worldwide understand the beautiful teachings regardless of language barriers.</div>
+                <div class="tut-tip"><strong>💡</strong> <span data-i18n="tutWelcomeTip">Works in any mosque or while watching online sermons.</span></div>
+            </div>
+            <div class="tut-step" data-s="2">
+                <div class="tut-icon">🌍</div>
+                <div class="tut-title" data-i18n="tutLangTitle">Select Languages</div>
+                <div class="tut-desc" data-i18n="tutLangDesc">Choose the Source Language (what the Imam speaks) and Translation Language (your preferred language). Only verified, working language combinations are shown.</div>
+                <div class="tut-tip"><strong>💡</strong> <span data-i18n="tutLangTip">Select a regional dialect (Saudi, Egyptian, etc.) for better speech recognition accuracy.</span></div>
+            </div>
+            <div class="tut-step" data-s="3">
+                <div class="tut-icon">🎤</div>
+                <div class="tut-title" data-i18n="tutMicTitle">Start Listening</div>
+                <div class="tut-desc" data-i18n="tutMicDesc">Tap the microphone button to start. The app listens and translates automatically. The audio visualizer shows when speech is detected.</div>
+                <div class="tut-tip"><strong>💡</strong> <span data-i18n="tutMicTip">Position your phone near the speaker. Allow microphone permission when prompted.</span></div>
+            </div>
+            <div class="tut-step" data-s="4">
+                <div class="tut-icon">📖</div>
+                <div class="tut-title" data-i18n="tutQuranTitle">Quran &amp; Du'a</div>
+                <div class="tut-desc" data-i18n="tutQuranDesc">Read Quran with Arabic text, transliteration, and translation in 30+ languages. Browse a collection of essential Du'as for daily life with meanings.</div>
+                <div class="tut-tip"><strong>💡</strong> <span data-i18n="tutQuranTip">Use the translation dropdown in the Quran tab to read in your own language!</span></div>
+            </div>
+            <div class="tut-step" data-s="5">
+                <div class="tut-icon">📱</div>
+                <div class="tut-title" data-i18n="tutPlatformTitle">Cross-Platform</div>
+                <div class="tut-desc" data-i18n="tutPlatformDesc">Android: Use Chrome browser. Keep screen on. iPhone/iPad: Use Safari browser. Add to Home Screen for best experience.</div>
+                <div class="tut-tip"><strong>💡</strong> <span data-i18n="tutPlatformTip">The app uses dual translation engines for maximum reliability.</span></div>
+            </div>
+            <div class="tut-step" data-s="6">
+                <div class="tut-icon">🤲</div>
+                <div class="tut-title" data-i18n="tutReadyTitle">You're Ready!</div>
+                <div class="tut-desc" data-i18n="tutReadyDesc">May Allah bless you. This app is completely free and made with love for the Muslim Ummah. Please share it with others!</div>
+                <div class="tut-tip"><strong>دعاء:</strong> اللهم علمنا ما ينفعنا وانفعنا بما علمتنا وزدنا علماً</div>
+            </div>
+        </div>
+        <div class="tut-dots" id="tutDots"></div>
+        <div class="tut-nav">
+            <button class="tut-btn skip" onclick="closeTut()" data-i18n="tutSkip">Skip</button>
+            <button class="tut-btn skip" id="tutBack" onclick="prevTut()" style="display:none" data-i18n="tutBack">← Back</button>
+            <button class="tut-btn next" id="tutNext" onclick="nextTut()" data-i18n="tutNext">Next →</button>
+        </div>
+    </div>
+</div>
+
+<button class="help-float" onclick="showTut()" title="Help">?</button>
+<div class="ver">v5</div>
+
+<div class="shell">
+    <div class="hdr">
+        <div class="hdr-ar">مترجم الخطبة الحي</div>
+        <div class="hdr-en" data-i18n="headerSubtitle">Khutbah Live Translator</div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab on" onclick="goTab('main',this)" data-i18n="tabTranslator">Translator</button>
+        <button class="tab" onclick="goTab('quran',this)" data-i18n="tabQuran">Quran</button>
+        <button class="tab" onclick="goTab('dua',this)" data-i18n="tabDua">Du'a</button>
+        <button class="tab" onclick="goTab('prayer',this)">🕌 <span data-i18n="tabPrayer">Prayer</span></button>
+        <button class="tab" onclick="goTab('settings',this)" data-i18n="tabSettings">Settings</button>
+        <button class="tab" onclick="goTab('about',this)" data-i18n="tabAbout">About</button>
+    </div>
+
+    <div class="panels">
+        <!-- === TRANSLATOR === -->
+        <div class="panel on" id="panelMain">
+            <div class="ctl">
+                <div class="lang-row">
+                    <div class="lang-grp">
+                        <div class="lang-lbl" data-i18n="lblSource">Source</div>
+                        <select class="lang-sel" id="srcLang">
+                            <optgroup label="Arabic">
+                                <option value="ar-SA">Arabic (Saudi)</option>
+                                <option value="ar-EG">Arabic (Egyptian)</option>
+                                <option value="ar-AE">Arabic (UAE)</option>
+                                <option value="ar-MA">Arabic (Moroccan)</option>
+                                <option value="ar-JO">Arabic (Jordanian)</option>
+                                <option value="ar-LB">Arabic (Lebanese)</option>
+                                <option value="ar-SY">Arabic (Syrian)</option>
+                                <option value="ar-IQ">Arabic (Iraqi)</option>
+                                <option value="ar-KW">Arabic (Kuwaiti)</option>
+                            </optgroup>
+                            <optgroup label="English">
+                                <option value="en-US">English (US)</option>
+                                <option value="en-GB">English (UK)</option>
+                            </optgroup>
+                            <optgroup label="South Asian">
+                                <option value="ur-PK">Urdu (Pakistan)</option>
+                                <option value="ur-IN">Urdu (India)</option>
+                                <option value="hi-IN">Hindi</option>
+                                <option value="bn-BD">Bengali (BD)</option>
+                                <option value="bn-IN">Bengali (India)</option>
+                                <option value="ta-IN">Tamil</option>
+                                <option value="ml-IN">Malayalam</option>
+                                <option value="gu-IN">Gujarati</option>
+                            </optgroup>
+                            <optgroup label="Southeast Asian">
+                                <option value="id-ID">Indonesian</option>
+                                <option value="ms-MY">Malay</option>
+                                <option value="th-TH">Thai</option>
+                                <option value="vi-VN">Vietnamese</option>
+                            </optgroup>
+                            <optgroup label="Turkish & Persian">
+                                <option value="tr-TR">Turkish</option>
+                                <option value="fa-IR">Farsi/Persian</option>
+                            </optgroup>
+                            <optgroup label="European">
+                                <option value="fr-FR">French</option>
+                                <option value="de-DE">German</option>
+                                <option value="nl-NL">Dutch</option>
+                                <option value="it-IT">Italian</option>
+                                <option value="ru-RU">Russian</option>
+                                <option value="es-ES">Spanish</option>
+                                <option value="pt-BR">Portuguese</option>
+                                <option value="pl-PL">Polish</option>
+                                <option value="bs-BA">Bosnian</option>
+                                <option value="sq-AL">Albanian</option>
+                            </optgroup>
+                            <optgroup label="East Asian">
+                                <option value="zh-CN">Chinese (Mandarin)</option>
+                                <option value="zh-HK">Chinese (Cantonese)</option>
+                                <option value="ja-JP">Japanese</option>
+                                <option value="ko-KR">Korean</option>
+                            </optgroup>
+                            <optgroup label="African">
+                                <option value="sw-KE">Swahili</option>
+                                <option value="am-ET">Amharic</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="mic-wrap">
+                        <button class="mic idle" id="micBtn" onclick="toggleListen()">🎤</button>
+                    </div>
+                    <div class="lang-grp">
+                        <div class="lang-lbl" data-i18n="lblTranslateTo">Translate to</div>
+                        <select class="lang-sel" id="tgtLang">
+                            <optgroup label="⭐ Most Common">
+                                <option value="en">English</option>
+                                <option value="ar">Arabic</option>
+                                <option value="ur">Urdu</option>
+                                <option value="id">Indonesian</option>
+                                <option value="ms">Malay</option>
+                                <option value="tr">Turkish</option>
+                                <option value="fr">French</option>
+                                <option value="es">Spanish</option>
+                            </optgroup>
+                            <optgroup label="South Asian">
+                                <option value="hi">Hindi</option>
+                                <option value="bn">Bengali</option>
+                                <option value="ta">Tamil</option>
+                                <option value="ml">Malayalam</option>
+                                <option value="gu">Gujarati</option>
+                                <option value="pa">Punjabi</option>
+                            </optgroup>
+                            <optgroup label="Southeast Asian">
+                                <option value="tl">Filipino</option>
+                                <option value="th">Thai</option>
+                                <option value="vi">Vietnamese</option>
+                            </optgroup>
+                            <optgroup label="Middle East & Central Asia">
+                                <option value="fa">Farsi/Persian</option>
+                                <option value="ps">Pashto</option>
+                                <option value="ku">Kurdish</option>
+                                <option value="az">Azerbaijani</option>
+                                <option value="uz">Uzbek</option>
+                            </optgroup>
+                            <optgroup label="African">
+                                <option value="sw">Swahili</option>
+                                <option value="ha">Hausa</option>
+                                <option value="so">Somali</option>
+                                <option value="am">Amharic</option>
+                            </optgroup>
+                            <optgroup label="European">
+                                <option value="de">German</option>
+                                <option value="nl">Dutch</option>
+                                <option value="it">Italian</option>
+                                <option value="ru">Russian</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="pl">Polish</option>
+                                <option value="bs">Bosnian</option>
+                                <option value="sq">Albanian</option>
+                            </optgroup>
+                            <optgroup label="East Asian">
+                                <option value="zh">Chinese</option>
+                                <option value="ja">Japanese</option>
+                                <option value="ko">Korean</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="viz" id="viz"></div>
+                <div class="sts">
+                    <div class="sts-dot" id="stsDot"></div>
+                    <span class="sts-txt" id="stsTxt" data-i18n="statusReady">Tap microphone to start</span>
+                </div>
+            </div>
+            <div class="out-wrap">
+                <div class="out-box" id="outBox">
+                    <div class="empty-msg">
+                        <span class="icon">🕌</span>
+                        Tap the microphone to begin<br>live translation of the Khutbah
+                    </div>
+                </div>
+            </div>
+            <div class="bar">
+                <div class="font-ctrl">
+                    <button class="font-btn" onclick="adjFont(-2)">−</button>
+                    <span class="font-val" id="fontVal">18px</span>
+                    <button class="font-btn" onclick="adjFont(2)">+</button>
+                </div>
+                <button class="bar-btn" onclick="clearAll()">🗑️ <span data-i18n="btnClear">Clear</span></button>
+                <button class="bar-btn primary" onclick="saveText()">💾 <span data-i18n="btnSave">Save</span></button>
+                <button class="bar-btn" id="recBtn" onclick="toggleRec()">⏺️ <span id="recTxt">Rec</span></button>
+                <div class="api-badge" id="apiBadge">
+                    <div class="api-dot ok" id="apiDot"></div>
+                    <span id="apiLabel">API Ready</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- === QURAN === -->
+        <div class="panel" id="panelQuran">
+            <div class="quran-inner">
+                <!-- v4.6: Added translation language dropdown -->
+                <div class="quran-nav">
+                    <select id="surahSelect" onchange="loadSurah()">
+                        <!-- Populated by JS -->
+                    </select>
+                    <select id="quranTransSelect" onchange="changeQuranTranslation()" title="Translation Language">
+                        <optgroup label="English">
+                            <option value="en.sahih">English (Sahih Intl)</option>
+                            <option value="en.asad">English (M. Asad)</option>
+                            <option value="en.pickthall">English (Pickthall)</option>
+                            <option value="en.yusufali">English (Yusuf Ali)</option>
+                        </optgroup>
+                        <optgroup label="اردو Urdu">
+                            <option value="ur.jalandhry">Urdu (Jalandhry)</option>
+                            <option value="ur.maududi">Urdu (Maududi)</option>
+                            <option value="ur.ahmedali">Urdu (Ahmed Ali)</option>
+                        </optgroup>
+                        <optgroup label="Türkçe Turkish">
+                            <option value="tr.diyanet">Turkish (Diyanet)</option>
+                            <option value="tr.ozturk">Turkish (Öztürk)</option>
+                        </optgroup>
+                        <optgroup label="Bahasa">
+                            <option value="id.indonesian">Indonesian</option>
+                            <option value="ms.basmeih">Malay (Basmeih)</option>
+                        </optgroup>
+                        <optgroup label="South Asian">
+                            <option value="hi.hindi">Hindi (हिन्दी)</option>
+                            <option value="bn.bengali">Bengali (বাংলা)</option>
+                            <option value="ta.tamil">Tamil (தமிழ்)</option>
+                            <option value="ml.abdulhameed">Malayalam (മലയാളം)</option>
+                        </optgroup>
+                        <optgroup label="فارسی Persian">
+                            <option value="fa.makarem">Farsi (Makarem)</option>
+                            <option value="fa.ansarian">Farsi (Ansarian)</option>
+                        </optgroup>
+                        <optgroup label="European">
+                            <option value="fr.hamidullah">French (Hamidullah)</option>
+                            <option value="de.bubenheim">German (Bubenheim)</option>
+                            <option value="es.cortes">Spanish (Cortes)</option>
+                            <option value="it.piccardo">Italian (Piccardo)</option>
+                            <option value="pt.elhayek">Portuguese (El-Hayek)</option>
+                            <option value="nl.keyzer">Dutch (Keyzer)</option>
+                            <option value="ru.kuliev">Russian (Kuliev)</option>
+                            <option value="pl.bielawskiego">Polish (Bielawski)</option>
+                            <option value="bs.korkut">Bosnian (Korkut)</option>
+                            <option value="sq.nahi">Albanian (Nahi)</option>
+                        </optgroup>
+                        <optgroup label="East Asian">
+                            <option value="zh.majian">Chinese (Ma Jian)</option>
+                            <option value="ja.japanese">Japanese (日本語)</option>
+                            <option value="ko.korean">Korean (한국어)</option>
+                            <option value="th.thai">Thai (ไทย)</option>
+                        </optgroup>
+                        <optgroup label="African">
+                            <option value="sw.barwani">Swahili (Barwani)</option>
+                            <option value="ha.gumi">Hausa (Gumi)</option>
+                            <option value="so.abduh">Somali (Abduh)</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                            <option value="az.musayev">Azerbaijani</option>
+                            <option value="ku.asan">Kurdish (Asan)</option>
+                            <option value="uz.sodik">Uzbek (Sodik)</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="quran-controls">
+                    <button class="q-toggle on" id="qShowArabic" onclick="toggleQView(this)" data-i18n="qArabic">Arabic</button>
+                    <button class="q-toggle on" id="qShowTranslit" onclick="toggleQView(this)" data-i18n="qTranslit">Transliteration</button>
+                    <button class="q-toggle on" id="qShowTrans" onclick="toggleQView(this)" data-i18n="qTranslation">Translation</button>
+                </div>
+                <div class="quran-audio-bar" id="quranAudioBar">
+                    <button class="qa-btn" id="qaPrev" onclick="qaPlayPrev()" title="Previous Ayah">⏮</button>
+                    <button class="qa-btn" id="qaPlayBtn" onclick="qaTogglePlay()" title="Play / Pause">▶</button>
+                    <button class="qa-btn" id="qaNext" onclick="qaPlayNext()" title="Next Ayah">⏭</button>
+                    <button class="qa-btn" id="qaStop" onclick="qaStop()" title="Stop">⏹</button>
+                    <div class="qa-progress" onclick="qaSeek(event)">
+                        <div class="qa-progress-fill" id="qaProgressFill"></div>
+                    </div>
+                    <div class="qa-info" id="qaInfo">—</div>
+                    <button class="qa-speed" id="qaSpeedBtn" onclick="qaCycleSpeed()" title="Playback Speed">1×</button>
+                    <select class="qa-reciter-select" id="qaReciterSelect" onchange="qaChangeReciter()">
+                        <option value="ar.alafasy">Mishary Alafasy</option>
+                        <option value="ar.abdulbasitmurattal">AbdulBasit (Murattal)</option>
+                        <option value="ar.hudhaify">Hudhaify</option>
+                        <option value="ar.minshawi">Minshawi</option>
+                        <option value="ar.abdurrahmaansudais">As-Sudais</option>
+                        <option value="ar.saaborehman">Saad Al-Ghamdi</option>
+                        <option value="ar.maaborehman">Maher Al-Muaiqly</option>
+                        <option value="ar.abdullahbasfar">Abdullah Basfar</option>
+                        <option value="ar.abdulsamad">Abdul Samad</option>
+                        <option value="ar.shaatree">Abu Bakr Ash-Shaatree</option>
+                        <option value="ar.ahmedajamy">Ahmed ibn Ali al-Ajamy</option>
+                        <option value="ar.hanirifai">Hani Rifai</option>
+                        <option value="ar.husary">Husary</option>
+                        <option value="ar.husarymujawwad">Husary (Mujawwad)</option>
+                        <option value="ar.ibrahimakhbar">Ibrahim Akhdar</option>
+                        <option value="ar.minshawimujawwad">Minshawy (Mujawwad)</option>
+                        <option value="ar.muhammadayyoub">Muhammad Ayyoub</option>
+                        <option value="ar.muhammadjibreel">Muhammad Jibreel</option>
+                        <option value="ar.saoodshuraym">Saood bin Ibraaheem Ash-Shuraym</option>
+                        <option value="ar.parhizgar">Parhizgar</option>
+                        <option value="ar.aymanswoaid">Ayman Sowaid</option>
+                    </select>
+                </div>
+                <!-- Floating audio controls - shows when scrolling -->
+                <div class="qa-floating-bar" id="qaFloatingBar">
+                    <button class="qa-floating-btn" id="qaFloatingPrev" onclick="qaPlayPrev()" title="Previous">⏮</button>
+                    <button class="qa-floating-btn" id="qaFloatingPlay" onclick="qaTogglePlay()" title="Play/Pause">▶</button>
+                    <button class="qa-floating-btn" id="qaFloatingNext" onclick="qaPlayNext()" title="Next">⏭</button>
+                    <button class="qa-floating-btn stop-btn" onclick="qaStop()" title="Stop">⏹</button>
+                    <div class="qa-floating-info" id="qaFloatingInfo">—</div>
+                </div>
+                <div id="quranContent">
+                    <div class="quran-loading">
+                        <div class="spinner"></div>
+                        Select a Surah to begin reading
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === DU'A === -->
+        <div class="panel" id="panelDua">
+            <div class="dua-inner">
+                <div class="dua-filter" id="duaFilterBar"></div>
+                <div id="duaContent">
+                    <div class="quran-loading">
+                        <div class="spinner"></div>
+                        Loading Du'as...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === PRAYER TIMES === -->
+        <div class="panel" id="panelPrayer">
+            <div class="prayer-panel">
+                <div class="prayer-hero" id="prayerHero">
+                    <div class="prayer-hero-label" data-i18n="prayerNextPrayer">Next Prayer</div>
+                    <div class="prayer-progress" id="prayerProgress">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="track" cx="50" cy="50" r="44"/>
+                            <circle class="fill" id="prayerArc" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="276.46"/>
+                        </svg>
+                        <div class="center-icon" id="prayerHeroIcon">🕌</div>
+                    </div>
+                    <div class="prayer-hero-name" id="prayerHeroName">—</div>
+                    <div class="prayer-hero-arabic" id="prayerHeroArabic"></div>
+                    <div class="prayer-hero-countdown" id="prayerCountdown">
+                        <div class="cd-unit"><span class="cd-num" id="cdHours">--</span><span class="cd-label" data-i18n="prayerHrs">hrs</span></div>
+                        <span class="cd-sep">:</span>
+                        <div class="cd-unit"><span class="cd-num" id="cdMins">--</span><span class="cd-label" data-i18n="prayerMin">min</span></div>
+                        <span class="cd-sep">:</span>
+                        <div class="cd-unit"><span class="cd-num" id="cdSecs">--</span><span class="cd-label" data-i18n="prayerSec">sec</span></div>
+                    </div>
+                    <div class="prayer-hero-at"><span data-i18n="prayerAdhanAt">Adhan at</span> <span id="prayerHeroTime">--:--</span></div>
+                </div>
+                <div class="prayer-date-bar">
+                    <span class="pdb-hijri" id="hijriDateDisplay">Loading...</span>
+                    <span class="pdb-dot"></span>
+                    <span class="pdb-greg" id="hijriDateSub"></span>
+                </div>
+                <div class="prayer-grid" id="prayerGrid">
+                    <div class="prayer-row" data-prayer="Fajr"><span class="p-icon">🌅</span><span class="p-name">Fajr<span class="p-arabic">الفجر</span></span><span class="p-time" id="ptFajr">--:--</span><span class="p-iqama" id="iqFajr"></span></div>
+                    <div class="prayer-row" data-prayer="Sunrise"><span class="p-icon">☀️</span><span class="p-name">Sunrise<span class="p-arabic">الشروق</span></span><span class="p-time" id="ptSunrise">--:--</span><span class="p-iqama"></span></div>
+                    <div class="prayer-row" data-prayer="Dhuhr"><span class="p-icon">🌤️</span><span class="p-name">Dhuhr<span class="p-arabic">الظهر</span></span><span class="p-time" id="ptDhuhr">--:--</span><span class="p-iqama" id="iqDhuhr"></span></div>
+                    <div class="prayer-row" data-prayer="Asr"><span class="p-icon">🌇</span><span class="p-name">Asr<span class="p-arabic">العصر</span></span><span class="p-time" id="ptAsr">--:--</span><span class="p-iqama" id="iqAsr"></span></div>
+                    <div class="prayer-row" data-prayer="Maghrib"><span class="p-icon">🌆</span><span class="p-name">Maghrib<span class="p-arabic">المغرب</span></span><span class="p-time" id="ptMaghrib">--:--</span><span class="p-iqama" id="iqMaghrib"></span></div>
+                    <div class="prayer-row" data-prayer="Isha"><span class="p-icon">🌙</span><span class="p-name">Isha<span class="p-arabic">العشاء</span></span><span class="p-time" id="ptIsha">--:--</span><span class="p-iqama" id="iqIsha"></span></div>
+                </div>
+                <div class="qibla-section">
+                    <button class="qibla-toggle" id="qiblaToggle" onclick="toggleQibla()">🕋 <span data-i18n="qiblaShow">Show Qibla Compass</span></button>
+                    <div class="qibla-compass-wrap" id="qiblaWrap">
+                        <div class="qibla-compass">
+                            <div class="qibla-north-dot"></div>
+                            <div class="qibla-compass-ring" id="qiblaRing">
+                                <span class="qibla-cardinal north">N</span>
+                                <span class="qibla-cardinal south">S</span>
+                                <span class="qibla-cardinal east">E</span>
+                                <span class="qibla-cardinal west">W</span>
+                                <div class="qibla-needle" id="qiblaNeedle"><div class="qibla-needle-body"></div></div>
+                            </div>
+                            <div class="qibla-center">🕋</div>
+                        </div>
+                        <div class="qibla-degree" id="qiblaDegree">—°</div>
+                        <div class="qibla-degree-label" data-i18n="qiblaDirLabel">Qibla Direction from North</div>
+                        <div class="qibla-status" id="qiblaStatus">Initializing compass...</div>
+                    </div>
+                </div>
+                <div class="prayer-footer">
+                    <select class="prayer-method-sel" id="prayerMethod" onchange="fetchPrayerTimes()">
+                        <option value="4">Umm Al-Qura (Saudi Arabia)</option>
+                        <option value="5">Egyptian General Authority</option>
+                        <option value="3">Muslim World League</option>
+                        <option value="2">ISNA (North America)</option>
+                        <option value="1">University of Islamic Sciences, Karachi</option>
+                        <option value="7">Institute of Geophysics, Tehran</option>
+                        <option value="8">Gulf Region</option>
+                        <option value="9">Kuwait</option>
+                        <option value="10">Qatar</option>
+                        <option value="11">Majlis Ugama Islam Singapura</option>
+                        <option value="12">UOIF (France)</option>
+                        <option value="13">Diyanet İşleri Başkanlığı (Turkey)</option>
+                        <option value="14">Spiritual Administration of Muslims (Russia)</option>
+                    </select>
+                    <div class="prayer-loc" id="prayerLocation">📍 Detecting location...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- === SETTINGS === -->
+        <div class="panel" id="panelSettings">
+            <div class="settings-inner">
+                <div class="set-group">
+                    <div class="set-title" data-i18n="setUILang">🌐 App Language</div>
+                    <label class="set-row">
+                        <select id="uiLangSelect" class="lang-sel" style="height:40px;flex:1" onchange="changeUILang(this.value)">
+                            <!-- Dynamically populated by initAvailableLangs() -->
+                            <option value="">Loading languages...</option>
+                        </select>
+                    </label>
+                    <div class="set-hint" data-i18n="setUILangHint">Changes the app interface language. Sermon translation language is set separately above.</div>
+                </div>
+                <div class="set-group">
+                    <div class="set-title" data-i18n="setSkin">🎨 App Skin</div>
+                    <div class="skin-grid" id="skinGrid">
+                        <button class="skin-chip on" data-skin="masjid-night" onclick="changeSkin('masjid-night',this)">
+                            <span class="skin-preview" style="background:linear-gradient(135deg,#0a2818,#0f3d24);border-color:#d4a843"></span>
+                            <span data-i18n="skinMasjidNight">Masjid Night</span>
+                        </button>
+                        <button class="skin-chip" data-skin="desert-sand" onclick="changeSkin('desert-sand',this)">
+                            <span class="skin-preview" style="background:linear-gradient(135deg,#2c1810,#4a2c17);border-color:#c8956c"></span>
+                            <span data-i18n="skinDesertSand">Desert Sand</span>
+                        </button>
+                        <button class="skin-chip" data-skin="midnight-blue" onclick="changeSkin('midnight-blue',this)">
+                            <span class="skin-preview" style="background:linear-gradient(135deg,#0a1628,#122244);border-color:#8ab4f8"></span>
+                            <span data-i18n="skinMidnightBlue">Midnight Blue</span>
+                        </button>
+                        <button class="skin-chip" data-skin="ottoman-rose" onclick="changeSkin('ottoman-rose',this)">
+                            <span class="skin-preview" style="background:linear-gradient(135deg,#2a0a14,#4a1225);border-color:#d4a043"></span>
+                            <span data-i18n="skinOttomanRose">Ottoman Rose</span>
+                        </button>
+                        <button class="skin-chip" data-skin="pure-light" onclick="changeSkin('pure-light',this)">
+                            <span class="skin-preview" style="background:linear-gradient(135deg,#f5f0e6,#e8e0d0);border-color:#2d6b45"></span>
+                            <span data-i18n="skinPureLight">Pure Light</span>
+                        </button>
+                        <button class="skin-chip" data-skin="royal-purple" onclick="changeSkin('royal-purple',this)">
+                            <span class="skin-preview" style="background:linear-gradient(135deg,#1a0a2e,#2d1452);border-color:#c9a0dc"></span>
+                            <span data-i18n="skinRoyalPurple">Royal Purple</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="set-group">
+                    <div class="set-title" data-i18n="setTranslation">Translation</div>
+                    <label class="set-row"><input type="checkbox" id="sInstant" checked onchange="saveSettings(true)"> <span data-i18n="setInstant">Instant translate (sentence-by-sentence)</span></label>
+                    <label class="set-row"><input type="checkbox" id="sAutoScroll" checked onchange="saveSettings(true)"> <span data-i18n="setAutoScroll">Auto-scroll to latest</span></label>
+                    <label class="set-row"><input type="checkbox" id="sHighlight" checked onchange="saveSettings(true)"> <span data-i18n="setHighlight">Highlight latest translation</span></label>
+                    <label class="set-row"><input type="checkbox" id="sShowOrig" onchange="saveSettings(true)"> <span data-i18n="setShowOrig">Show original text alongside</span></label>
+                </div>
+                <div class="set-group">
+                    <div class="set-title" data-i18n="setAudio">Audio</div>
+                    <label class="set-row"><span data-i18n="setMicSensitivity">Mic sensitivity:</span> <span id="threshVal">15</span><input type="range" id="sThresh" min="5" max="60" value="15" oninput="document.getElementById('threshVal').textContent=this.value"></label>
+                    <label class="set-row"><input type="checkbox" id="sWakeLock" checked> <span data-i18n="setKeepScreen">Keep screen on while listening</span></label>
+                    <label class="set-row"><input type="checkbox" id="sNoiseFilter" checked> <span data-i18n="setNoiseFilter">Enhanced noise filter (mosque/outdoor mode)</span></label>
+                    <div class="set-hint" data-i18n="setNoiseFilterHint">Applies highpass + lowpass filters to isolate speech and remove background noise like AC hum, crowd murmur, and echo.</div>
+                    <label class="set-row"><span data-i18n="setVoiceBoost">Voice boost:</span> <span id="gainVal">1.5</span>×<input type="range" id="sGain" min="1" max="4" value="1.5" step="0.5" oninput="document.getElementById('gainVal').textContent=this.value"></label>
+                    <div class="set-hint" data-i18n="setVoiceBoostHint">Amplifies the speech signal before recognition. Increase if the speaker is far from the mic or the environment is very loud.</div>
+                    <label class="set-row"><span data-i18n="setNoiseGate">Noise gate:</span> <span id="gateVal">20</span><input type="range" id="sGate" min="0" max="50" value="20" step="5" oninput="document.getElementById('gateVal').textContent=this.value"></label>
+                    <div class="set-hint" data-i18n="setNoiseGateHint">Audio below this volume level is treated as background noise and muted. Higher = more aggressive noise removal but may clip quiet speech. Set to 0 to disable.</div>
+                </div>
+                <div class="set-group">
+                    <div class="set-title" data-i18n="setSpeechFlow">Speech Flow</div>
+                    <label class="set-row"><span data-i18n="setMaxBuffer">Max buffer time:</span> <span id="bufferVal">8</span>s<input type="range" id="sBuffer" min="3" max="20" value="8" step="1" oninput="document.getElementById('bufferVal').textContent=this.value"></label>
+                    <div class="set-hint" data-i18n="setMaxBufferHint">Forces translation after this many seconds of continuous speech — even if the speaker doesn't pause.</div>
+                    <label class="set-row"><span data-i18n="setSilenceWait">Silence wait:</span> <span id="silenceVal">1.5</span>s<input type="range" id="sSilence" min="0.5" max="5" value="1.5" step="0.5" oninput="document.getElementById('silenceVal').textContent=this.value"></label>
+                    <div class="set-hint" data-i18n="setSilenceWaitHint">How long to wait after the speaker pauses before translating.</div>
+                </div>
+                <div class="set-group">
+                    <div class="set-title" data-i18n="setEngine">Translation Engine</div>
+                    <label class="set-row"><input type="radio" name="engine" value="auto" checked> <span data-i18n="setEngineAuto">Auto (Lingva → MyMemory → LibreTranslate)</span></label>
+                    <label class="set-row"><input type="radio" name="engine" value="lingva"> <span data-i18n="setEngineLingva">Lingva only (Google-powered)</span></label>
+                    <label class="set-row"><input type="radio" name="engine" value="mymemory"> <span data-i18n="setEngineMymemory">MyMemory only</span></label>
+                </div>
+                <button class="set-save" onclick="saveSettings()" data-i18n="btnSaveSettings">Save Settings ✓</button>
+            </div>
+        </div>
+
+        <!-- === ABOUT + CONTACT === -->
+        <div class="panel" id="panelAbout">
+            <div class="about-inner">
+                <h2 data-i18n="aboutTitle">Khutbah Live Translator</h2>
+                <div class="bismillah-hdr">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+                <div class="about-text" data-i18n="aboutIntro">This application was created to help Muslims around the world understand Friday sermons regardless of language barriers. Whether you're a new Muslim, living abroad, or simply want to understand a sermon in a different language — this tool is for you.</div>
+                <div class="about-text">
+                    <strong data-i18n="aboutFeatures">v5 Features:</strong><br>
+                    • Multi-language UI (English, Arabic, Urdu + more via lang/ files)<br>
+                    • Quran reader with 30+ translation languages<br>
+                    • Dual translation engine (Lingva + MyMemory fallback)<br>
+                    • Du'a collection with categories and references<br>
+                    • Prayer times with Qibla compass<br>
+                    • Offline caching for all content<br>
+                    • Cross-platform PWA (Android + iOS ready)<br>
+                    • Dark theme for mosque-friendly use
+                </div>
+                <div class="dev-card">
+                    <h3 data-i18n="aboutDeveloper">Developer</h3>
+                    <p><strong data-i18n="aboutDevName">Dr. Khaled Diab</strong><br><span data-i18n="aboutDevRole">Senior Corporate Trainer &amp; Energy Systems Expert</span><br><span data-i18n="aboutDevLocation">Jeddah, Saudi Arabia</span></p>
+                    <p data-i18n="aboutFreeMsg">This app is completely free, open-source, and made as Sadaqah Jariyah for the Muslim Ummah. Please share it with anyone who might benefit.</p>
+                </div>
+                <div class="section-divider"><span data-i18n="aboutContact">Contact &amp; Support</span></div>
+                <div class="c-card">
+                    <h3 data-i18n="aboutGetInTouch">Get in Touch</h3>
+                    <div class="c-item"><span class="c-icon">📧</span><div class="c-info"><div class="c-lbl">Email</div><a href="mailto:khaled.mohamed.rady@outlook.com">khaled.mohamed.rady&#64;outlook.com</a></div></div>
+                    <div class="c-item"><span class="c-icon">💼</span><div class="c-info"><div class="c-lbl">LinkedIn</div><a href="https://linkedin.com/in/dr-khaled-diab" target="_blank">linkedin.com/in/khaleddiab</a></div></div>
+                    <div class="c-item"><span class="c-icon">💻</span><div class="c-info"><div class="c-lbl">GitHub</div><a href="https://github.com/khalecl" target="_blank">github.com/khalecl</a></div></div>
+                </div>
+                <div class="donate-box">
+                    <h3 data-i18n="aboutSadaqah">صدقة جارية</h3>
+                    <p data-i18n="aboutDonateMsg">This app is free and always will be. If you'd like to support its development, please make dua for us or share it with your community.</p>
+                </div>
+                <div class="c-card">
+                    <h3 data-i18n="aboutFeedback">Send Feedback</h3>
+                    <div class="fb-grp">
+                        <input id="fbName" class="fb-input" data-i18n-placeholder="aboutFbName" placeholder="Your name">
+                        <input id="fbEmail" class="fb-input" data-i18n-placeholder="aboutFbEmail" placeholder="Email address">
+                        <select id="fbType" class="fb-input">
+                            <option value="" data-i18n="aboutFbType">Select feedback type...</option>
+                            <option value="bug" data-i18n="aboutFbTypeBug">🐛 Bug Report</option>
+                            <option value="feature" data-i18n="aboutFbTypeFeature">✨ Feature Request</option>
+                            <option value="translation" data-i18n="aboutFbTypeTranslation">🌍 Translation Issue</option>
+                            <option value="quran" data-i18n="aboutFbTypeQuran">📖 Quran/Du'a Issue</option>
+                            <option value="general" data-i18n="aboutFbTypeGeneral">💬 General Feedback</option>
+                        </select>
+                        <textarea id="fbMsg" class="fb-input" data-i18n-placeholder="aboutFbMsg" placeholder="Your message..."></textarea>
+                        <button class="bar-btn primary" style="width:100%;justify-content:center" onclick="sendFB()" data-i18n="aboutFbSend">📤 Send via WhatsApp</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modular application. app.js is the single entry point; it imports the
+     core, feature and UI modules in dependency order. No build step. -->
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
