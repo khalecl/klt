@@ -65,7 +65,8 @@ export function getProviders() {
     return {
         lingva:        makeProvider('lingva',        (t, s, g) => window.tryLingva(t, s, g)),
         mymemory:      makeProvider('mymemory',      (t, s, g) => window.tryMyMemory(t, s, g)),
-        libretranslate: makeProvider('libretranslate', (t, s, g) => window.tryLibre(t, s, g))
+        libretranslate: makeProvider('libretranslate', (t, s, g) => window.tryLibre(t, s, g)),
+        ai:            makeProvider('ai',            (t, s, g) => window.tryAI(t, s, g))
     };
 }
 
@@ -77,9 +78,13 @@ export function getProviders() {
  *   mymemory  -> mymemory
  */
 export function providerChain(engine) {
-    if (engine === 'lingva')   return ['lingva', 'mymemory'];
-    if (engine === 'mymemory') return ['mymemory'];
-    return ['lingva', 'mymemory', 'libretranslate'];
+    // AI is appended last and ONLY when a backend endpoint is configured, so
+    // the default chain is byte-identical to the pre-AI behaviour.
+    const ai = (typeof window.isAIAvailable === 'function' && window.isAIAvailable()) ? ['ai'] : [];
+    if (engine === 'ai')       return ai.concat(['lingva', 'mymemory']);
+    if (engine === 'lingva')   return ['lingva', 'mymemory'].concat(ai);
+    if (engine === 'mymemory') return ['mymemory'].concat(ai);
+    return ['lingva', 'mymemory', 'libretranslate'].concat(ai);
 }
 
 Object.assign(window, { providerError, providerSuccess, makeProvider, getProviders, providerChain });

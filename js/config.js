@@ -68,12 +68,25 @@ const DEFAULT_AVAILABLE_LANGS = Object.keys(LANGUAGE_NAMES);
 const LANG_CACHE_KEY = 'kht_available_langs';
 const LANG_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
+/* Lingva mirrors, in priority order. Verified live 2026-09-07:
+     lingva.dialectapp.org      → 200, CORS *, good Arabic quality
+     lingva.ml                  → 500 (upstream scraping broken)
+     translate.plausibility.cloud → 500
+     lingva.lunar.icu           → 500
+   The dead hosts are kept as fallbacks because Lingva instances recover;
+   the round-robin in tryLingva() skips a failing host on the next call. */
 const LINGVA_HOSTS = [
+    'https://lingva.dialectapp.org',
     'https://lingva.ml',
     'https://translate.plausibility.cloud',
+    'https://lingva.lunar.icu',
 ];
 // [migrated → appState.translator.lingvaIdx] (js/state.js)
 
+/* libretranslate.com began requiring an API key (returns 400 with
+   "Visit https://portal.libretranslate.com to get an API key"). Kept in the
+   chain so nothing is removed, but it will fail fast until a self-hosted or
+   keyed instance is configured. */
 const LIBRE_HOSTS = ['https://libretranslate.com'];
 
 // ═══════════════════════════════════════════════

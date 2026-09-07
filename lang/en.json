@@ -169,5 +169,9 @@
   "sessionEnd": "End session",
   "sessionSaved": "Saved",
   "sessionSaving": "Saving…",
-  "sessionSaveFailed": "Not saved"
+  "sessionSaveFailed": "Not saved",
+  "qLabelSurah": "Surah",
+  "qLabelTranslation": "Translation",
+  "qLabelReciter": "Reciter",
+  "pLabelMethod": "Calculation method"
 }

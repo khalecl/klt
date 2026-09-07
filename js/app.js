@@ -38,10 +38,13 @@ import './translator/audio.js';
 import './translator/speech.js';
 import './translator/segmentation.js';
 import './translator/normalization.js';
+import './translator/context.js';
+import './translator/validation.js';
 import './translator/providers/provider.js';
 import './translator/providers/lingva.js';
 import './translator/providers/mymemory.js';
 import './translator/providers/libretranslate.js';
+import './translator/providers/ai.js';
 import './translator/queue.js';
 import './translator/translator.js';
 

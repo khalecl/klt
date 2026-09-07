@@ -3,7 +3,7 @@
    Extracted verbatim from index.html v4.6.1-baseline (Refactor Task 5). */
 
 async function tryMyMemory(text, src, tgt) {
-    try { const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}&de=khutbah.app@translator.net`; const res = await fetchWithTimeout(url, {}, 8000); const data = await res.json(); if (data.responseStatus === 200 && data.responseData?.translatedText) { const trans = data.responseData.translatedText; if (tgt !== 'it' && isLikelyItalian(trans, text)) { apiStats.mmFail++; return null; } if (trans.trim().toLowerCase() === text.trim().toLowerCase()) { apiStats.mmFail++; return null; } apiStats.mmOk++; return trans; } } catch(e) { apiStats.mmFail++; }
+    try { const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}&de=khaled.mohamed.rady@outlook.com`; const res = await fetchWithTimeout(url, {}, 8000); const data = await res.json(); if (data.responseStatus === 200 && data.responseData?.translatedText) { const trans = data.responseData.translatedText; if (tgt !== 'it' && isLikelyItalian(trans, text)) { apiStats.mmFail++; return null; } if (trans.trim().toLowerCase() === text.trim().toLowerCase()) { apiStats.mmFail++; return null; } apiStats.mmOk++; return trans; } } catch(e) { apiStats.mmFail++; }
     return null;
 }
 

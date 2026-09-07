@@ -169,5 +169,9 @@
   "sessionEnd": "سیشن ختم کریں",
   "sessionSaved": "محفوظ",
   "sessionSaving": "محفوظ ہو رہا…",
-  "sessionSaveFailed": "محفوظ نہیں"
+  "sessionSaveFailed": "محفوظ نہیں",
+  "qLabelSurah": "سورہ",
+  "qLabelTranslation": "ترجمہ",
+  "qLabelReciter": "قاری",
+  "pLabelMethod": "حساب کا طریقہ"
 }

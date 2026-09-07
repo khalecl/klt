@@ -276,10 +276,15 @@
             <div class="quran-inner">
                 <!-- v4.6: Added translation language dropdown -->
                 <div class="quran-nav">
-                    <select id="surahSelect" onchange="loadSurah()">
+                    <div class="q-field" id="qFieldSurah">
+                        <label class="q-label" for="surahSelect" data-i18n="qLabelSurah">Surah</label>
+                    <select id="surahSelect" onchange="loadSurah()" aria-label="Surah">
                         <!-- Populated by JS -->
                     </select>
-                    <select id="quranTransSelect" onchange="changeQuranTranslation()" title="Translation Language">
+                    </div>
+                    <div class="q-field" id="qFieldTrans">
+                        <label class="q-label" for="quranTransSelect" data-i18n="qLabelTranslation">Translation</label>
+                    <select id="quranTransSelect" onchange="changeQuranTranslation()" aria-label="Translation" title="Translation Language">
                         <optgroup label="English">
                             <option value="en.sahih">English (Sahih Intl)</option>
                             <option value="en.asad">English (M. Asad)</option>
@@ -338,6 +343,7 @@
                             <option value="uz.sodik">Uzbek (Sodik)</option>
                         </optgroup>
                     </select>
+                    </div>
                 </div>
                 <div class="quran-controls">
                     <button class="q-toggle on" id="qShowArabic" onclick="toggleQView(this)" data-i18n="qArabic">Arabic</button>
@@ -354,7 +360,9 @@
                     </div>
                     <div class="qa-info" id="qaInfo">—</div>
                     <button class="qa-speed" id="qaSpeedBtn" onclick="qaCycleSpeed()" title="Playback Speed">1×</button>
-                    <select class="qa-reciter-select" id="qaReciterSelect" onchange="qaChangeReciter()">
+                    <div class="qa-reciter-field">
+                        <label class="qa-reciter-label" for="qaReciterSelect" data-i18n="qLabelReciter">Reciter</label>
+                    <select class="qa-reciter-select" id="qaReciterSelect" onchange="qaChangeReciter()" aria-label="Reciter">
                         <option value="ar.alafasy">Mishary Alafasy</option>
                         <option value="ar.abdulbasitmurattal">AbdulBasit (Murattal)</option>
                         <option value="ar.hudhaify">Hudhaify</option>
@@ -377,6 +385,7 @@
                         <option value="ar.parhizgar">Parhizgar</option>
                         <option value="ar.aymanswoaid">Ayman Sowaid</option>
                     </select>
+                    </div>
                 </div>
                 <!-- Floating audio controls - shows when scrolling -->
                 <div class="qa-floating-bar" id="qaFloatingBar">
@@ -464,7 +473,8 @@
                     </div>
                 </div>
                 <div class="prayer-footer">
-                    <select class="prayer-method-sel" id="prayerMethod" onchange="fetchPrayerTimes()">
+                    <label class="prayer-method-label" for="prayerMethod" data-i18n="pLabelMethod">Calculation method</label>
+                    <select class="prayer-method-sel" id="prayerMethod" onchange="fetchPrayerTimes()" aria-label="Calculation method">
                         <option value="4">Umm Al-Qura (Saudi Arabia)</option>
                         <option value="5">Egyptian General Authority</option>
                         <option value="3">Muslim World League</option>

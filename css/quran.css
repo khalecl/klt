@@ -224,3 +224,26 @@
         display:flex;align-items:center;gap:2px;
     }
     .qa-speed:hover{background:rgba(212,168,67,.1)}
+
+    /* === Labelled selector fields (v5) ===
+       The surah / translation / reciter dropdowns previously carried no
+       visible label, so their purpose was only discoverable by opening them.
+       Labels use existing tokens, so all skins and RTL apply unchanged. */
+    .q-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+    .q-label{
+        font-size:11px;font-weight:500;letter-spacing:.4px;
+        color:var(--text-dim);text-transform:uppercase;
+        padding-inline-start:2px;
+    }
+    /* keep the original width ratio between the two Quran selectors */
+    .quran-nav #qFieldSurah{flex:1.2}
+    .quran-nav #qFieldTrans{flex:0.8}
+    .quran-nav .q-field select{flex:0 0 auto;width:100%;height:44px;min-height:44px}
+    .quran-nav{align-items:flex-end}
+
+    .qa-reciter-field{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+    .qa-reciter-label{
+        font-size:10px;letter-spacing:.3px;color:var(--text-dim);
+        text-transform:uppercase;white-space:nowrap;
+    }
+    .qa-reciter-field .qa-reciter-select{width:100%;flex:0 0 auto}
