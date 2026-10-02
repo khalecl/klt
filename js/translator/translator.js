@@ -49,7 +49,7 @@ async function doTranslate(text) {
     // state the offline dictionary answers instantly; the network is retried
     // again after 30 s.
     const ds = window.__kltNet || (window.__kltNet = { fails: 0, until: 0 });
-    const degraded = Date.now() < ds.until && typeof window.isOfflineDictReady === 'function' && window.isOfflineDictReady();
+    const degraded = Date.now() < ds.until && typeof window.isOfflineDictReady === 'function' && window.isOfflineDictReady(src, tgt);
     const offline = navigator.onLine === false || degraded;
     if (degraded) console.log('[translate] weak network — using offline dictionary');
     const engine = offline ? 'offline' : cfg.engine;
@@ -77,9 +77,10 @@ async function doTranslate(text) {
         if (result) ds.fails = 0;
         else if (++ds.fails >= 2) { ds.until = Date.now() + 30000; ds.fails = 0; console.warn('[translate] 2 online failures — offline dictionary for 30 s'); }
     }
-    // v5.1: offline dictionary — last resort, works with no connection.
+    // v5.2: offline dictionary — last resort, works with no connection.
+    // ar↔en, ar→ru, ru→ar. Async: the pair is parsed on first use.
     if (!result && typeof window.tryOfflineDict === 'function') {
-        accept(window.tryOfflineDict(text, src, tgt), 'offline');
+        accept(await window.tryOfflineDict(text, src, tgt), 'offline');
     }
     document.getElementById('loader').classList.remove('on');
     if (result) { txCache.set(cacheKey, result); if (txCache.size > 500) { const firstKey = txCache.keys().next().value; txCache.delete(firstKey); } addEntry(text, result); try { if (typeof window.addTranslationPair === 'function') window.addTranslationPair(text, result); } catch (e) {} txEmit('translation-success', { text: text, translated: result, provider: provider, warnings: validationWarnings }); }
