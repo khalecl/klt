@@ -76,10 +76,7 @@ const LANG_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
    The dead hosts are kept as fallbacks because Lingva instances recover;
    the round-robin in tryLingva() skips a failing host on the next call. */
 const LINGVA_HOSTS = [
-    'https://lingva.dialectapp.org',
-    'https://lingva.ml',
-    'https://translate.plausibility.cloud',
-    'https://lingva.lunar.icu',
+    'https://lingva.ml',          // v5.1: other 3 hosts returned HTTP 500 (Oct 2026)
 ];
 // [migrated → appState.translator.lingvaIdx] (js/state.js)
 
