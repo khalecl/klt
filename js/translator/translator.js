@@ -48,7 +48,8 @@ async function doTranslate(text) {
     // just time out) and go straight to the offline dictionary.
     const offline = navigator.onLine === false;
     const engine = offline ? 'offline' : cfg.engine;
-    if (engine === 'auto' || engine === 'lingva') accept(await tryLingva(text, src, tgt), 'lingva');
+    if (engine === 'auto' && typeof window.tryGtx === 'function') accept(await window.tryGtx(text, src, tgt), 'gtx');
+    if (!result && (engine === 'auto' || engine === 'lingva')) accept(await tryLingva(text, src, tgt), 'lingva');
     if (!result && (engine === 'auto' || engine === 'mymemory')) accept(await tryMyMemory(text, src, tgt), 'mymemory');
     if (!result && engine === 'auto') accept(await tryLibre(text, src, tgt), 'libretranslate');
     if (!result && !offline) {
