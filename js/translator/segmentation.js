@@ -342,6 +342,14 @@ export function flushSegment(reason, force) {
     return emit(text, why, started);
 }
 
+/** Speech still in progress (interim results): postpone the silence flush
+    so a sentence isn't cut while the imam is mid-phrase. Buffer cap unchanged. */
+export function noteSpeechActivity() {
+    if (!seg.pending) return;
+    if (seg.silenceTimer) clearTimeout(seg.silenceTimer);
+    seg.silenceTimer = setTimeout(function () { flushSegment('silence'); }, silenceSeconds() * 1000);
+}
+
 /** Session/end flush — always emits whatever valid text remains. */
 export function endSegmentationSession() {
     const out = flushSegment('session-end', true);
@@ -372,5 +380,6 @@ export function segmentationState() {
 
 Object.assign(window, {
     setSegmentationSink, pushFragment, flushSegment,
-    endSegmentationSession, resetSegmentation, segmentationState
+    endSegmentationSession, resetSegmentation, segmentationState,
+    noteSpeechActivity
 });
