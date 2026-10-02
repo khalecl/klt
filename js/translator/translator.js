@@ -1,100 +1,93 @@
-/* Khutbah Live Translator — translator/speech.js
-   SpeechRecognition lifecycle. Android/iOS branches preserved.
-   Does NOT translate — it emits fragments to the segmentation layer.
+/* Khutbah Live Translator — translator/translator.js
+   Orchestrator: cache -> provider selection -> fallback -> state.
+   Contains no provider URLs (see providers/).
    Extracted verbatim from index.html v4.6.1-baseline (Refactor Task 5). */
 
-/** Announce recognition state. Fire-and-forget. */
-function spEmit(name, detail) {
+/** Announce translation progress. Fire-and-forget. */
+function txEmit(name, detail) {
     try { window.dispatchEvent(new CustomEvent('khutbah:' + name, { detail: detail })); }
     catch (e) {}
 }
 
-function safeStartRecognition() {
-    if (!recognition || !isListening || recognitionRestarting) return;
-    recognitionRestarting = true;
-    recognition.continuous = true; recognition.interimResults = true;
-    recognition.lang = document.getElementById('srcLang').value;
-    if (IS_ANDROID) recognition.maxAlternatives = 1;
-    const doStart = () => { try { recognition.start(); } catch(e) { if (e.name !== 'InvalidStateError') console.warn('[v4.6] Recognition restart failed:', e.message); } setTimeout(() => { recognitionRestarting = false; }, RESTART_DELAY); };
-    if (IS_ANDROID) setTimeout(doStart, 50); else doStart();
-}
+async function doTranslate(text) {
+    if (!text?.trim()) return;
+    const last = translations[translations.length - 1];
+    if (last?.orig === text.trim()) return;
+    const src = document.getElementById('srcLang').value.split('-')[0];
+    const tgt = document.getElementById('tgtLang').value;
+    if (src === tgt) { addEntry(text, text); return; }
+    const cacheKey = `${src}|${tgt}|${text.trim().toLowerCase()}`;
+    if (txCache.has(cacheKey)) { apiStats.cacheHit++; const cached = txCache.get(cacheKey); addEntry(text, cached); updApiUI(); try { if (typeof window.addSourceSegment === 'function') window.addSourceSegment(text); if (typeof window.addTranslationPair === 'function') window.addTranslationPair(text, cached); } catch (e) {} txEmit('translation-success', { text: text, translated: cached, provider: 'cache' }); return; }
+    document.getElementById('loader').classList.add('on');
+    txEmit('translation-start', { text: text, source: src, target: tgt });
+    try { if (typeof window.addSourceSegment === 'function') window.addSourceSegment(text); } catch (e) {}
+    let result = null;
+    let provider = null;
+    const validationWarnings = [];
 
-async function toggleListen() { if (!isListening) await startListen(); else stopListen(); }
-
-async function startListen() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('Speech recognition not supported.\n\nAndroid: Use Chrome\niPhone/iPad: Use Safari'); return; }
-    try {
-        recognition = new SR(); recognition.continuous = true; recognition.interimResults = true;
-        recognition.lang = document.getElementById('srcLang').value;
-        if (IS_ANDROID) recognition.maxAlternatives = 1;
-        if (!IS_ANDROID) {
-            const audioConstraints = { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1, sampleRate: { ideal: 16000 }, latency: { ideal: 0 } };
-            stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
-            runViz(stream); setupRecorder(processedStream || stream);
+    /* Accept a provider result only if it survives validation. A response that
+       is empty, HTML, an error string, identical to the source or otherwise
+       malformed is treated as a FAILURE so the next provider is tried — see
+       js/translator/validation.js. Never repaired, only accepted or rejected. */
+    const accept = function (candidate, name) {
+        if (!candidate) return false;
+        if (typeof window.validateTranslation !== 'function') {
+            result = candidate; provider = name; return true;      // module absent: prior behaviour
         }
-        if (cfg.wakeLock) await reqWakeLock();
-        let transcript = '', silenceTimer, bufferFlushTimer, restarts = 0;
+        const v = window.validateTranslation(candidate, text, { sameLanguage: src === tgt });
+        if (!v.valid) {
+            console.warn('[translate] ' + name + ' rejected — ' + v.reason);
+            txEmit('translation-rejected', { provider: name, reason: v.reason });
+            return false;
+        }
+        if (v.warnings && v.warnings.length) validationWarnings.push.apply(validationWarnings, v.warnings);
+        result = candidate; provider = name; return true;
+    };
 
-        recognition.onstart = () => { isListening = true; restarts = 0; recognitionRestarting = false; updMicUI(true); spEmit('recognition-start', null); console.log('[v4.6] Recognition started on', IS_ANDROID ? 'Android' : 'Desktop/iOS'); if (IS_ANDROID && !stream) console.log('[v4.6] Android: skipping getUserMedia'); };
-
-        recognition.onresult = (e) => {
-            clearTimeout(silenceTimer); restarts = 0;
-            let interim = '', final = '';
-            for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '; else interim = e.results[i][0].transcript; }
-            if (final) { if (IS_ANDROID) transcript = final; else transcript += final; }
-            document.getElementById('stsTxt').textContent = interim ? t('statusSpeechDetected') : t('statusListening');
-            spEmit('recognition-interim', { interim: interim, final: final, transcript: transcript });
-            // v5.1: every final goes to the segmenter, which decides when a
-            // sentence is complete (pause / max-buffer / max-length) and never
-            // splits a protected phrase. Interims only keep the pause timer alive.
-            if (final.trim()) { transcript = ''; window.pushFragment(final.trim()); }
-            else if (interim && typeof window.noteSpeechActivity === 'function') window.noteSpeechActivity();
-        };
-
-        recognition.onnomatch = () => { console.warn('[v4.6] No match'); document.getElementById('stsTxt').textContent = '🎤 No match — try speaking louder...'; };
-        recognition.onerror = (e) => {
-            console.warn('[v4.6] Recognition error:', e.error, e.message || '');
-            if ((e.error === 'no-speech' || e.error === 'audio-capture' || e.error === 'network') && isListening && restarts < 15) { restarts++; setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY * 2); }
-            else if (e.error === 'not-allowed') { alert('Microphone permission denied.'); stopListen(); }
-            else if (e.error === 'language-not-supported') { alert('Language not supported for speech recognition on your device.'); stopListen(); }
-            else if (e.error === 'aborted' && isListening && restarts < 15) { restarts++; setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY * 3); }
-        };
-        recognition.onend = () => { console.log('[v4.6] Recognition ended, isListening:', isListening); /* v5.1: pending text stays in the segmenter across restarts */ if (isListening) setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY); };
-
-        if (IS_ANDROID) { setTimeout(() => { try { recognition.start(); console.log('[v4.6] Android: recognition.start() called (deferred)'); } catch(e) { console.error('[v4.6] Android start failed:', e); } }, 50); }
-        else recognition.start();
-    } catch (e) { console.error('[v4.6] startListen error:', e); alert('Microphone access denied.'); }
+    // v5.1: when the device is offline, skip every network engine (each would
+    // just time out) and go straight to the offline dictionary.
+    const offline = navigator.onLine === false;
+    const engine = offline ? 'offline' : cfg.engine;
+    if (engine === 'auto' || engine === 'lingva') accept(await tryLingva(text, src, tgt), 'lingva');
+    if (!result && (engine === 'auto' || engine === 'mymemory')) accept(await tryMyMemory(text, src, tgt), 'mymemory');
+    if (!result && engine === 'auto') accept(await tryLibre(text, src, tgt), 'libretranslate');
+    if (!result && !offline) {
+        // All engines failed — likely rate-limited. Back off and retry once.
+        console.warn('[v4.6] All engines failed, retrying after 2.5s backoff...');
+        await new Promise(r => setTimeout(r, 2500));
+        lastTxApiCall = Date.now();
+        txEmit('translation-retry', { text: text });
+        if (!accept(await tryLingva(text, src, tgt), 'retry')) {
+            accept(await tryMyMemory(text, src, tgt), 'retry');
+        }
+    }
+    // Final fallback: AI, only when a backend endpoint has been configured.
+    // Inactive by default, so the existing chain is unchanged out of the box.
+    if (!offline && !result && typeof window.isAIAvailable === 'function' && window.isAIAvailable()) {
+        accept(await window.tryAI(text, src, tgt), 'ai');
+    }
+    // v5.1: offline dictionary — last resort, works with no connection.
+    if (!result && typeof window.tryOfflineDict === 'function') {
+        accept(window.tryOfflineDict(text, src, tgt), 'offline');
+    }
+    document.getElementById('loader').classList.remove('on');
+    if (result) { txCache.set(cacheKey, result); if (txCache.size > 500) { const firstKey = txCache.keys().next().value; txCache.delete(firstKey); } addEntry(text, result); try { if (typeof window.addTranslationPair === 'function') window.addTranslationPair(text, result); } catch (e) {} txEmit('translation-success', { text: text, translated: result, provider: provider, warnings: validationWarnings }); }
+    else { addEntry(text, '⚠️ Translation unavailable — ' + text); txEmit('translation-error', { text: text }); }
+    updApiUI();
 }
-
-function stopListen() {
-    isListening = false; recognitionRestarting = false;
-    if (recognition) try { recognition.stop(); } catch(e){}
-    if (audioCtx) try { audioCtx.close(); } catch(e){} audioCtx = null;
-    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-    if (processedStream) { processedStream.getTracks().forEach(t => t.stop()); processedStream = null; }
-    audioNodes = {}; relWakeLock(); updMicUI(false);
-    spEmit('recognition-stop', null);
-}
-
-function updMicUI(on) {
-    const btn = document.getElementById('micBtn'), dot = document.getElementById('stsDot'), txt = document.getElementById('stsTxt');
-    if (on) { btn.className = 'mic live'; btn.textContent = '⏹️'; dot.classList.add('on'); txt.textContent = t('statusListening'); if (IS_ANDROID) startFakeViz(); }
-    else { btn.className = 'mic idle'; btn.textContent = '🎤'; dot.classList.remove('on'); dot.style.boxShadow = 'none'; txt.textContent = t('statusReady'); if (IS_ANDROID) stopFakeViz(); document.querySelectorAll('.viz-bar').forEach(b => { b.style.height = '8px'; b.style.background = 'rgba(212,168,67,.3)'; }); }
-}
-
-// [migrated → appState.audio.fakeVizInterval] (js/state.js)
-function startFakeViz() { const bars = document.querySelectorAll('.viz-bar'); fakeVizInterval = setInterval(() => { bars.forEach(bar => { const h = 6 + Math.random() * 28; bar.style.height = h + 'px'; bar.style.background = h > 15 ? 'var(--gold)' : 'rgba(212,168,67,.3)'; }); }, 150); }
-function stopFakeViz() { clearInterval(fakeVizInterval); fakeVizInterval = null; }
-
 // ══════════════════════════════════════════════
-// TRANSLATION ENGINE
+// TRANSLATION QUEUE — rate-limit + sentence aggregation
+// Collects speech fragments, merges short ones into full
+// sentences, adds punctuation on pause-flush, and sends
+// to the API no faster than TX_MIN_INTERVAL to avoid
+// server rate-limit drops.
 // ══════════════════════════════════════════════
+// [migrated → appState.translator.txQueue / .txProcessing / .lastTxApiCall] (js/state.js)
 
 
 /* ── Global bridge: inline HTML handlers and cross-module calls
       resolve these through the global scope. Removed per-name as
       call sites migrate to explicit imports. ── */
-Object.assign(window, { safeStartRecognition, toggleListen, startListen, stopListen, updMicUI, startFakeViz, stopFakeViz });
+Object.assign(window, { doTranslate });
 
-export { safeStartRecognition, toggleListen, startListen, stopListen, updMicUI, startFakeViz, stopFakeViz };
+export { doTranslate };
