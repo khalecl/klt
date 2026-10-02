@@ -45,6 +45,7 @@ import './translator/providers/lingva.js';
 import './translator/providers/mymemory.js';
 import './translator/providers/libretranslate.js';
 import './translator/providers/ai.js';
+import './translator/providers/offline-dict.js';
 import './translator/queue.js';
 import './translator/translator.js';
 
