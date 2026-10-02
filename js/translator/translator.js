@@ -44,9 +44,14 @@ async function doTranslate(text) {
         result = candidate; provider = name; return true;
     };
 
-    // v5.1: when the device is offline, skip every network engine (each would
-    // just time out) and go straight to the offline dictionary.
-    const offline = navigator.onLine === false;
+    // v5.1: skip the network engines when the device is offline, OR when the
+    // last 2 sentences failed online (weak mosque signal). In that "degraded"
+    // state the offline dictionary answers instantly; the network is retried
+    // again after 30 s.
+    const ds = window.__kltNet || (window.__kltNet = { fails: 0, until: 0 });
+    const degraded = Date.now() < ds.until && typeof window.isOfflineDictReady === 'function' && window.isOfflineDictReady();
+    const offline = navigator.onLine === false || degraded;
+    if (degraded) console.log('[translate] weak network — using offline dictionary');
     const engine = offline ? 'offline' : cfg.engine;
     if (engine === 'auto' && typeof window.tryGtx === 'function') accept(await window.tryGtx(text, src, tgt), 'gtx');
     if (!result && (engine === 'auto' || engine === 'lingva')) accept(await tryLingva(text, src, tgt), 'lingva');
@@ -66,6 +71,11 @@ async function doTranslate(text) {
     // Inactive by default, so the existing chain is unchanged out of the box.
     if (!offline && !result && typeof window.isAIAvailable === 'function' && window.isAIAvailable()) {
         accept(await window.tryAI(text, src, tgt), 'ai');
+    }
+    // v5.1: track online health for the degraded mode above.
+    if (!offline) {
+        if (result) ds.fails = 0;
+        else if (++ds.fails >= 2) { ds.until = Date.now() + 30000; ds.fails = 0; console.warn('[translate] 2 online failures — offline dictionary for 30 s'); }
     }
     // v5.1: offline dictionary — last resort, works with no connection.
     if (!result && typeof window.tryOfflineDict === 'function') {
