@@ -41,6 +41,7 @@ import './translator/normalization.js';
 import './translator/context.js';
 import './translator/validation.js';
 import './translator/providers/provider.js';
+import './translator/providers/gtx.js';
 import './translator/providers/lingva.js';
 import './translator/providers/mymemory.js';
 import './translator/providers/libretranslate.js';
