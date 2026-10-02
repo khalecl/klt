@@ -630,5 +630,13 @@
 <!-- Modular application. app.js is the single entry point; it imports the
      core, feature and UI modules in dependency order. No build step. -->
 <script type="module" src="js/app.js"></script>
+<script>
+  /* v5.1: offline app shell */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function (e) { console.warn('[sw] register failed', e); });
+    });
+  }
+</script>
 </body>
 </html>
