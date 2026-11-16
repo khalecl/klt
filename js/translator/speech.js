@@ -35,67 +35,70 @@ async function startListen() {
         }
         if (cfg.wakeLock) await reqWakeLock();
         let restarts = 0;
-        // Long-speech handling. Chrome/Safari only confirm (final) words at a
-        // pause, so during long unbroken speech nothing would be translated and
-        // a recognition restart would drop it all. We therefore commit stable
-        // interim text in chunks ourselves and, when the final arrives, send only
-        // the part not already committed.
-        let liveText = '', committed = '';
-        const COMMIT_CHARS = 90;     // commit once this much new interim text has built up
-        const HOLD_WORDS = 2;        // last words may still be revised — keep them back
-        const wordCut = (txt, from) => {   // index after the last word we may commit
-            const words = txt.slice(from).split(' ');
-            if (words.length <= HOLD_WORDS) return from;
-            return from + words.slice(0, words.length - HOLD_WORDS).join(' ').length;
+        // ── Long-speech + frozen-recognizer handling ─────────────────────────
+        // Browsers confirm (final) words only at a pause, sometimes never, and
+        // Chrome can freeze on an unconfirmed result. We therefore track how much
+        // of EACH result (by index) has already been sent, and send:
+        //   • a final's unsent part when it arrives;
+        //   • stable chunks of a long interim (every ~90 chars, last 2 words held);
+        //   • the whole interim if it stops changing (watchdog);
+        // and restart the recognizer if it stays frozen.
+        const COMMIT_CHARS = 90, HOLD_WORDS = 2;
+        let sent = {}, lastResults = [];          // sent[i] = chars of result i already sent
+        let stableTimer = null, stallTimer = null;
+        const norm = (x) => (x || '').replace(/\s+/g, ' ').trim();
+        const send = (txt) => { txt = norm(txt); if (txt) window.pushFragment(txt, { isFinal: true }); };
+        const sendFrom = (i, text, upto) => {     // send text[sent[i] .. upto), word-aligned
+            const from = sent[i] || 0;
+            if (upto <= from) return;
+            let start = from;
+            if (from > 0 && from < text.length && text[from - 1] !== ' ') {   // engine revised: realign to next word
+                const sp = text.indexOf(' ', from); start = sp === -1 ? upto : sp;
+            }
+            send(text.slice(start, upto)); sent[i] = upto;
         };
-        const remainder = (full) => {      // part of full text not yet committed
-            full = full.trim();
-            if (!committed) return full;
-            if (full.toLowerCase().startsWith(committed.toLowerCase())) return full.slice(committed.length).trim();
-            // Engine revised earlier words: skip roughly what was already sent.
-            if (full.length <= committed.length) return '';
-            const sp = full.indexOf(' ', committed.length - 1);
-            return sp === -1 ? '' : full.slice(sp).trim();
+        const flushInterims = (why) => {          // send everything not yet sent
+            lastResults.forEach((r, i) => { if (!r.final) { const tx = norm(r.text); if (tx.length > (sent[i] || 0)) { if (why) console.log('[speech] ' + why + ':', tx.slice(sent[i] || 0, (sent[i] || 0) + 50)); sendFrom(i, tx, tx.length); } } });
         };
-        const send = (txt) => { txt = (txt || '').trim(); if (txt) window.pushFragment(txt, { isFinal: true }); };
-        const rescueInterim = () => { send(remainder(liveText)); liveText = ''; committed = ''; };
+        const clearWatch = () => { clearTimeout(stableTimer); clearTimeout(stallTimer); };
+        const armWatch = () => {
+            clearWatch();
+            stableTimer = setTimeout(() => {
+                flushInterims('interim stable → translate');
+                stallTimer = setTimeout(() => {
+                    if (!isListening) return;
+                    console.log('[speech] recognizer frozen → restarting');
+                    try { recognition.stop(); } catch (e) {}
+                }, 5000);
+            }, ((window.cfg && window.cfg.silenceWait) || 1.5) * 1000 + 300);
+        };
+        const rescueInterim = () => { clearWatch(); flushInterims(); sent = {}; lastResults = []; };
 
         recognition.onstart = () => { isListening = true; restarts = 0; recognitionRestarting = false; updMicUI(true); spEmit('recognition-start', null); console.log('[v4.6] Recognition started on', IS_ANDROID ? 'Android' : 'Desktop/iOS'); if (IS_ANDROID && !stream) console.log('[v4.6] Android: skipping getUserMedia'); };
 
         recognition.onresult = (e) => {
             restarts = 0;
-            let interim = '', final = '';
-            for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '; }
-            // All unconfirmed results (Chrome can hold several at once), not just the last.
-            for (let i = 0; i < e.results.length; i++) { if (!e.results[i].isFinal) interim += e.results[i][0].transcript + ' '; }
-            interim = interim.replace(/\s+/g, ' ').trim();
-            document.getElementById('stsTxt').textContent = interim ? t('statusSpeechDetected') : t('statusListening');
-            spEmit('recognition-interim', { interim: interim, final: final, transcript: final });
-
-            if (final.trim()) {
-                const f = final.replace(/\s+/g, ' ').trim();
-                if (committed && committed.toLowerCase().startsWith(f.toLowerCase())) {
-                    // Everything confirmed was already sent; keep the extra as committed.
-                    committed = committed.slice(f.length).trim();
-                } else {
-                    send(remainder(f));
-                    committed = '';
-                }
-                liveText = interim;
-                if (interim) window.noteSpeechActivity();
-                return;
-            }
-            if (!interim) return;
-            liveText = interim;
-            window.noteSpeechActivity();
-            // Commit stable text during long speech so translation keeps flowing.
-            if (!committed || interim.toLowerCase().startsWith(committed.toLowerCase())) {
-                const from = committed.length;
-                if (interim.length - from >= COMMIT_CHARS) {
-                    const cut = wordCut(interim, from);
-                    if (cut > from) { send(interim.slice(from, cut)); committed = interim.slice(0, cut).trim(); }
+            lastResults = [];
+            let hasInterim = false;
+            for (let i = 0; i < e.results.length; i++) {
+                const text = norm(e.results[i][0].transcript), isFinal = e.results[i].isFinal;
+                lastResults.push({ text: text, final: isFinal });
+                if (i < e.resultIndex) continue;
+                if (isFinal) { if (sent[i] !== -1) { sendFrom(i, text, text.length); sent[i] = -1; } }   // -1 = done
+                else {
+                    hasInterim = true;
+                    if (sent[i] === -1) sent[i] = 0;
+                    if (text.length - (sent[i] || 0) >= COMMIT_CHARS) {
+                        const words = text.slice(sent[i] || 0).split(' ');
+                        if (words.length > HOLD_WORDS) sendFrom(i, text, (sent[i] || 0) + words.slice(0, words.length - HOLD_WORDS).join(' ').length);
+                    }
                 }
             }
+            document.getElementById('stsTxt').textContent = hasInterim ? t('statusSpeechDetected') : t('statusListening');
+            const interimText = lastResults.filter(r => !r.final).map(r => r.text).join(' ');
+            const finalText = lastResults.slice(e.resultIndex).filter(r => r.final).map(r => r.text).join(' ');
+            spEmit('recognition-interim', { interim: interimText, final: finalText, transcript: finalText });
+            if (hasInterim) { window.noteSpeechActivity(); armWatch(); } else clearWatch();
         };
 
         recognition.onnomatch = () => { console.warn('[v4.6] No match'); document.getElementById('stsTxt').textContent = '🎤 No match — try speaking louder...'; };
