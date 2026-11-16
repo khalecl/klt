@@ -19,7 +19,8 @@ function safeStartRecognition() {
     if (IS_ANDROID) setTimeout(doStart, 50); else doStart();
 }
 
-async function toggleListen() { if (!isListening) await startListen(); else stopListen(); }
+// Go through window.* so app.js decorators (session start/pause, final flush) always run.
+async function toggleListen() { if (!isListening) await window.startListen(); else window.stopListen(); }
 
 async function startListen() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
