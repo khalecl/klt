@@ -34,25 +34,68 @@ async function startListen() {
             runViz(stream); setupRecorder(processedStream || stream);
         }
         if (cfg.wakeLock) await reqWakeLock();
-        let restarts = 0, lastInterim = '';
-        // Unconfirmed (interim) words. During long unbroken speech the browser can
-        // end/restart recognition before confirming them and silently drop them,
-        // so we hand them to segmentation ourselves.
-        const rescueInterim = () => { const t = lastInterim.trim(); lastInterim = ''; if (t) window.pushFragment(t, { isFinal: true }); };
+        let restarts = 0;
+        // Long-speech handling. Chrome/Safari only confirm (final) words at a
+        // pause, so during long unbroken speech nothing would be translated and
+        // a recognition restart would drop it all. We therefore commit stable
+        // interim text in chunks ourselves and, when the final arrives, send only
+        // the part not already committed.
+        let liveText = '', committed = '';
+        const COMMIT_CHARS = 90;     // commit once this much new interim text has built up
+        const HOLD_WORDS = 2;        // last words may still be revised — keep them back
+        const wordCut = (txt, from) => {   // index after the last word we may commit
+            const words = txt.slice(from).split(' ');
+            if (words.length <= HOLD_WORDS) return from;
+            return from + words.slice(0, words.length - HOLD_WORDS).join(' ').length;
+        };
+        const remainder = (full) => {      // part of full text not yet committed
+            full = full.trim();
+            if (!committed) return full;
+            if (full.toLowerCase().startsWith(committed.toLowerCase())) return full.slice(committed.length).trim();
+            // Engine revised earlier words: skip roughly what was already sent.
+            if (full.length <= committed.length) return '';
+            const sp = full.indexOf(' ', committed.length - 1);
+            return sp === -1 ? '' : full.slice(sp).trim();
+        };
+        const send = (txt) => { txt = (txt || '').trim(); if (txt) window.pushFragment(txt, { isFinal: true }); };
+        const rescueInterim = () => { send(remainder(liveText)); liveText = ''; committed = ''; };
 
         recognition.onstart = () => { isListening = true; restarts = 0; recognitionRestarting = false; updMicUI(true); spEmit('recognition-start', null); console.log('[v4.6] Recognition started on', IS_ANDROID ? 'Android' : 'Desktop/iOS'); if (IS_ANDROID && !stream) console.log('[v4.6] Android: skipping getUserMedia'); };
 
         recognition.onresult = (e) => {
             restarts = 0;
             let interim = '', final = '';
-            for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '; else interim = e.results[i][0].transcript; }
+            for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '; }
+            // All unconfirmed results (Chrome can hold several at once), not just the last.
+            for (let i = 0; i < e.results.length; i++) { if (!e.results[i].isFinal) interim += e.results[i][0].transcript + ' '; }
+            interim = interim.replace(/\s+/g, ' ').trim();
             document.getElementById('stsTxt').textContent = interim ? t('statusSpeechDetected') : t('statusListening');
             spEmit('recognition-interim', { interim: interim, final: final, transcript: final });
-            // Segmentation owns all timing (pause / buffer / max length).
-            // Finals become fragments; interims only keep the silence timer alive.
-            lastInterim = interim;
-            if (final.trim()) window.pushFragment(final.trim(), { isFinal: true });
-            else if (interim) window.noteSpeechActivity();
+
+            if (final.trim()) {
+                const f = final.replace(/\s+/g, ' ').trim();
+                if (committed && committed.toLowerCase().startsWith(f.toLowerCase())) {
+                    // Everything confirmed was already sent; keep the extra as committed.
+                    committed = committed.slice(f.length).trim();
+                } else {
+                    send(remainder(f));
+                    committed = '';
+                }
+                liveText = interim;
+                if (interim) window.noteSpeechActivity();
+                return;
+            }
+            if (!interim) return;
+            liveText = interim;
+            window.noteSpeechActivity();
+            // Commit stable text during long speech so translation keeps flowing.
+            if (!committed || interim.toLowerCase().startsWith(committed.toLowerCase())) {
+                const from = committed.length;
+                if (interim.length - from >= COMMIT_CHARS) {
+                    const cut = wordCut(interim, from);
+                    if (cut > from) { send(interim.slice(from, cut)); committed = interim.slice(0, cut).trim(); }
+                }
+            }
         };
 
         recognition.onnomatch = () => { console.warn('[v4.6] No match'); document.getElementById('stsTxt').textContent = '🎤 No match — try speaking louder...'; };
