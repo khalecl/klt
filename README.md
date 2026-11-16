@@ -8,7 +8,7 @@
 
 [🌐 Live Demo](https://khalecl.github.io/Khutbah) • [📱 Install as Web App](#installation--how-to-use)
 
-![Version](https://img.shields.io/badge/version-4.6-blue)
+![Version](https://img.shields.io/badge/version-4.7-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-Active-brightgreen)
 ![Languages](https://img.shields.io/badge/languages-35+-orange)

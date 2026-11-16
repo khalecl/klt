@@ -63,6 +63,7 @@ export function makeProvider(name, legacyFn) {
  */
 export function getProviders() {
     return {
+        gtx:           makeProvider('gtx',           (t, s, g) => window.tryGtx(t, s, g)),
         lingva:        makeProvider('lingva',        (t, s, g) => window.tryLingva(t, s, g)),
         mymemory:      makeProvider('mymemory',      (t, s, g) => window.tryMyMemory(t, s, g)),
         libretranslate: makeProvider('libretranslate', (t, s, g) => window.tryLibre(t, s, g)),
@@ -73,7 +74,7 @@ export function getProviders() {
 /**
  * Provider order for a given cfg.engine value.
  * Mirrors the baseline chain in doTranslate() exactly:
- *   auto      -> lingva, mymemory, libretranslate
+ *   auto      -> gtx, lingva, mymemory, libretranslate
  *   lingva    -> lingva, mymemory
  *   mymemory  -> mymemory
  */
@@ -84,7 +85,7 @@ export function providerChain(engine) {
     if (engine === 'ai')       return ai.concat(['lingva', 'mymemory']);
     if (engine === 'lingva')   return ['lingva', 'mymemory'].concat(ai);
     if (engine === 'mymemory') return ['mymemory'].concat(ai);
-    return ['lingva', 'mymemory', 'libretranslate'].concat(ai);
+    return ['gtx', 'lingva', 'mymemory', 'libretranslate'].concat(ai);
 }
 
 Object.assign(window, { providerError, providerSuccess, makeProvider, getProviders, providerChain });

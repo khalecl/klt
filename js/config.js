@@ -68,8 +68,9 @@ const DEFAULT_AVAILABLE_LANGS = Object.keys(LANGUAGE_NAMES);
 const LANG_CACHE_KEY = 'kht_available_langs';
 const LANG_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-/* Lingva mirrors, in priority order. Verified live 2026-09-07:
-     lingva.dialectapp.org      → 200, CORS *, good Arabic quality
+/* Lingva mirrors. Only lingva.ml is listed (2026-11-16); gtx is the primary
+   provider and Lingva is a fallback. Status checked 2026-09-07:
+     lingva.dialectapp.org      → since dropped from LINGVA_HOSTS
      lingva.ml                  → 500 (upstream scraping broken)
      translate.plausibility.cloud → 500
      lingva.lunar.icu           → 500

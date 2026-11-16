@@ -126,7 +126,8 @@
                 instant: true, autoScroll: true, highlight: true, showOrig: false,
                 threshold: 15, wakeLock: true, engine: 'auto',
                 bufferTime: 8, silenceWait: 1.5,
-                noiseFilter: true, voiceGain: 2.5, noiseGate: 20
+                noiseFilter: true, voiceGain: 2.5, noiseGate: 20,
+                speak: false, speakRate: 1.1
             }
         },
 

@@ -34,28 +34,20 @@ async function startListen() {
             runViz(stream); setupRecorder(processedStream || stream);
         }
         if (cfg.wakeLock) await reqWakeLock();
-        let transcript = '', silenceTimer, bufferFlushTimer, restarts = 0;
+        let restarts = 0;
 
         recognition.onstart = () => { isListening = true; restarts = 0; recognitionRestarting = false; updMicUI(true); spEmit('recognition-start', null); console.log('[v4.6] Recognition started on', IS_ANDROID ? 'Android' : 'Desktop/iOS'); if (IS_ANDROID && !stream) console.log('[v4.6] Android: skipping getUserMedia'); };
 
         recognition.onresult = (e) => {
-            clearTimeout(silenceTimer); restarts = 0;
+            restarts = 0;
             let interim = '', final = '';
             for (let i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '; else interim = e.results[i][0].transcript; }
-            if (final) { if (IS_ANDROID) transcript = final; else transcript += final; }
             document.getElementById('stsTxt').textContent = interim ? t('statusSpeechDetected') : t('statusListening');
-            spEmit('recognition-interim', { interim: interim, final: final, transcript: transcript });
-            if (cfg.instant && final && transcript.trim()) {
-                clearTimeout(bufferFlushTimer); clearTimeout(silenceTimer);
-                if (IS_ANDROID) { silenceTimer = setTimeout(() => { if (transcript.trim()) { queueTranslation(transcript.trim()); transcript = ''; } }, 600); }
-                else { bufferFlushTimer = null; queueTranslation(transcript.trim()); transcript = ''; }
-            } else if (!cfg.instant && (transcript + interim).trim()) {
-                clearTimeout(silenceTimer);
-                silenceTimer = setTimeout(() => { if (transcript.trim()) { clearTimeout(bufferFlushTimer); bufferFlushTimer = null; queueTranslation(transcript.trim()); transcript = ''; } }, cfg.silenceWait * 1000);
-            }
-            if (transcript.trim() && !bufferFlushTimer) {
-                bufferFlushTimer = setTimeout(() => { bufferFlushTimer = null; if (transcript.trim()) { clearTimeout(silenceTimer); queueTranslation(transcript.trim()); transcript = ''; } }, cfg.bufferTime * 1000);
-            }
+            spEmit('recognition-interim', { interim: interim, final: final, transcript: final });
+            // Segmentation owns all timing (pause / buffer / max length).
+            // Finals become fragments; interims only keep the silence timer alive.
+            if (final.trim()) window.pushFragment(final.trim(), { isFinal: true });
+            else if (interim) window.noteSpeechActivity();
         };
 
         recognition.onnomatch = () => { console.warn('[v4.6] No match'); document.getElementById('stsTxt').textContent = '🎤 No match — try speaking louder...'; };
@@ -66,7 +58,8 @@ async function startListen() {
             else if (e.error === 'language-not-supported') { alert('Language not supported for speech recognition on your device.'); stopListen(); }
             else if (e.error === 'aborted' && isListening && restarts < 15) { restarts++; setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY * 3); }
         };
-        recognition.onend = () => { console.log('[v4.6] Recognition ended, isListening:', isListening); if (transcript.trim()) { queueTranslation(transcript.trim()); transcript = ''; } if (isListening) setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY); };
+        recognition.onend = () => { console.log('[v4.6] Recognition ended, isListening:', isListening); // No flush here: recognition restarts mid-sentence; segmentation keeps the buffer.
+        if (isListening) setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY); };
 
         if (IS_ANDROID) { setTimeout(() => { try { recognition.start(); console.log('[v4.6] Android: recognition.start() called (deferred)'); } catch(e) { console.error('[v4.6] Android start failed:', e); } }, 50); }
         else recognition.start();

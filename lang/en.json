@@ -173,5 +173,8 @@
   "qLabelSurah": "Surah",
   "qLabelTranslation": "Translation",
   "qLabelReciter": "Reciter",
-  "pLabelMethod": "Calculation method"
+  "pLabelMethod": "Calculation method",
+  "setSpeak": "🎧 Speak translation (earphones)",
+  "setSpeakRate": "Voice speed:",
+  "setSpeakHint": "Use wired earphones. Bluetooth earbuds may take over the microphone, and the loudspeaker will be picked up by the mic."
 }

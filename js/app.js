@@ -66,6 +66,7 @@ import './ui/tabs.js';
 import './ui/dialogs.js';
 import './ui/notifications.js';
 import './ui/session-ui.js';
+import './ui/speak.js';
 
 /* ══════════════════════════════════════════════
    DECORATORS
@@ -183,12 +184,14 @@ const _origAddEntry = window.addEntry;
 window.addEntry = function (orig, trans) {
     const result = _origAddEntry.apply(this, arguments);
     try { window.addTranslation(orig, trans); } catch (e) { console.warn('[session] addTranslation', e); }
+    try { if (window.speakTranslation) window.speakTranslation(trans); } catch (e) { console.warn('[speak]', e); }
     return result;
 };
 
 // Lifecycle: bound to the existing listen controls.
 const _origStartListen = window.startListen;
 window.startListen = async function () {
+    try { if (window.unlockSpeech) window.unlockSpeech(); } catch (e) {}
     const result = await _origStartListen.apply(this, arguments);
     try {
         const s = window.getCurrentSession();
@@ -210,6 +213,7 @@ window.stopListen = function () {
         if (typeof window.endSegmentationSession === 'function') window.endSegmentationSession();
     } catch (e) { console.warn('[session] flush', e); }
     const result = _origStopListen.apply(this, arguments);
+    try { if (window.stopSpeaking) window.stopSpeaking(); } catch (e) {}
     try { window.pauseSession(); } catch (e) { console.warn('[session] pause', e); }
     return result;
 };

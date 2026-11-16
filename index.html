@@ -547,6 +547,9 @@
                     <div class="set-title" data-i18n="setAudio">Audio</div>
                     <label class="set-row"><span data-i18n="setMicSensitivity">Mic sensitivity:</span> <span id="threshVal">15</span><input type="range" id="sThresh" min="5" max="60" value="15" oninput="document.getElementById('threshVal').textContent=this.value"></label>
                     <label class="set-row"><input type="checkbox" id="sWakeLock" checked> <span data-i18n="setKeepScreen">Keep screen on while listening</span></label>
+                    <label class="set-row"><input type="checkbox" id="sSpeak"> <span data-i18n="setSpeak">🎧 Speak translation (earphones)</span></label>
+                    <label class="set-row"><span data-i18n="setSpeakRate">Voice speed:</span> <span id="speakRateVal">1.1</span>×<input type="range" id="sSpeakRate" min="0.7" max="1.6" value="1.1" step="0.1" oninput="document.getElementById('speakRateVal').textContent=this.value"></label>
+                    <div class="set-hint" data-i18n="setSpeakHint">Use wired earphones. Bluetooth earbuds may take over the microphone, and the loudspeaker will be picked up by the mic.</div>
                     <label class="set-row"><input type="checkbox" id="sNoiseFilter" checked> <span data-i18n="setNoiseFilter">Enhanced noise filter (mosque/outdoor mode)</span></label>
                     <div class="set-hint" data-i18n="setNoiseFilterHint">Applies highpass + lowpass filters to isolate speech and remove background noise like AC hum, crowd murmur, and echo.</div>
                     <label class="set-row"><span data-i18n="setVoiceBoost">Voice boost:</span> <span id="gainVal">1.5</span>×<input type="range" id="sGain" min="1" max="4" value="1.5" step="0.5" oninput="document.getElementById('gainVal').textContent=this.value"></label>
