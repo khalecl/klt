@@ -66,25 +66,36 @@ async function startListen() {
         // Tracking is by WORD count per result (not characters): when Chrome
         // corrects earlier words the count barely moves, so we never cut a word
         // in half or skip words.
-        const COMMIT_WORDS = 12, HOLD_WORDS = 2;
-        let sent = {}, lastResults = [];          // sent[i] = words of result i already sent; -1 = done
+        const COMMIT_WORDS = 10, HOLD_WORDS = 2;
+        // Tracking is by WORD count over the WHOLE session transcript (all results
+        // joined), so it doesn't matter how Chrome splits, merges or reshuffles
+        // its result pieces. Reset when recognition restarts.
+        let sentWords = 0, liveWords = [], lastSendAt = Date.now();
+        const SEND_EVERY_MS = 3000, MIN_TIMED_WORDS = 4;   // fast speakers never pause: send every 3 s
         let stableTimer = null, stallTimer = null;
         const norm = (x) => (x || '').replace(/\s+/g, ' ').trim();
         const send = (txt) => { txt = norm(txt); if (txt) window.pushFragment(txt, { isFinal: true }); };
-        const sendWords = (i, text, upto) => {    // send words [sent[i], upto)
-            const words = norm(text).split(' ').filter(Boolean);
-            const from = Math.max(0, sent[i] || 0);
-            upto = Math.min(upto == null ? words.length : upto, words.length);
-            if (upto > from) send(words.slice(from, upto).join(' '));
-            sent[i] = Math.max(from, upto);
+        const sendUpTo = (upto, why) => {
+            upto = Math.min(upto, liveWords.length);
+            if (upto <= sentWords) return;
+            const piece = liveWords.slice(sentWords, upto).join(' ');
+            if (why) console.log('[speech] ' + why + ':', piece.slice(0, 60));
+            send(piece); sentWords = upto; lastSendAt = Date.now(); sentTail = liveWords.slice(Math.max(0, upto - 4), upto);
         };
-        const flushInterims = (why) => {          // send everything not yet sent
-            lastResults.forEach((r, i) => {
-                if (r.final || sent[i] === -1) return;
-                const n = r.text ? r.text.split(' ').length : 0;
-                if (n > (sent[i] || 0)) { if (why) console.log('[speech] ' + why + ':', r.text.split(' ').slice(sent[i] || 0).join(' ').slice(0, 60)); sendWords(i, r.text); }
-            });
+        // Re-find our position if Chrome dropped or reshuffled earlier text:
+        // locate the last words we sent and continue right after them.
+        let sentTail = [];
+        const key = (w) => (w || '').toLowerCase().replace(/[.,!?;:«»"']/g, '');
+        const tailAt = (pos) => { const k = sentTail.length; if (pos < k) return false; for (let j = 0; j < k; j++) if (key(liveWords[pos - k + j]) !== key(sentTail[j])) return false; return true; };
+        const realign = () => {
+            if (!sentWords || !sentTail.length || tailAt(sentWords)) return;
+            for (let pos = liveWords.length; pos >= sentTail.length; pos--) if (tailAt(pos)) { sentWords = pos; return; }
+            // Tail not found: text was replaced. Continue from the same relative point if possible.
+            if (sentWords > liveWords.length) { console.log('[speech] transcript shrank — resyncing'); sentWords = Math.max(0, liveWords.length - HOLD_WORDS - COMMIT_WORDS); }
         };
+        const flushInterims = (why) => sendUpTo(liveWords.length, why);
+        // Debug: last 300 raw recognition events. In the console: copy(JSON.stringify(__kltSpeechLog))
+        window.__kltSpeechLog = window.__kltSpeechLog || [];
         const clearWatch = () => { clearTimeout(stableTimer); clearTimeout(stallTimer); };
         const armWatch = () => {
             clearWatch();
@@ -97,31 +108,39 @@ async function startListen() {
                 }, 5000);
             }, ((window.cfg && window.cfg.silenceWait) || 1.5) * 1000 + 300);
         };
-        const rescueInterim = () => { clearWatch(); flushInterims(); sent = {}; lastResults = []; };
+        const rescueInterim = () => { clearWatch(); flushInterims(); sentWords = 0; liveWords = []; sentTail = []; };
 
         recognition.onstart = () => { running = true; isListening = true; restarts = 0; recognitionRestarting = false; updMicUI(true); spEmit('recognition-start', null); console.log('[v4.6] Recognition started on', IS_ANDROID ? 'Android' : 'Desktop/iOS'); if (IS_ANDROID && !stream) console.log('[v4.6] Android: skipping getUserMedia'); };
 
         recognition.onresult = (e) => {
             restarts = 0;
-            lastResults = [];
-            let hasInterim = false;
+            const parts = [], interimParts = [], finalParts = [];
+            let lastFinal = true;
             for (let i = 0; i < e.results.length; i++) {
-                const text = norm(e.results[i][0].transcript), isFinal = e.results[i].isFinal;
-                lastResults.push({ text: text, final: isFinal });
-                if (i < e.resultIndex) continue;
-                if (isFinal) { if (sent[i] !== -1) { sendWords(i, text); sent[i] = -1; } }
-                else {
-                    hasInterim = true;
-                    if (sent[i] === -1) sent[i] = 0;
-                    const n = text ? text.split(' ').length : 0, stable = n - HOLD_WORDS;
-                    if (stable - (sent[i] || 0) >= COMMIT_WORDS) sendWords(i, text, stable);
-                }
+                const tx = norm(e.results[i][0].transcript), f = e.results[i].isFinal;
+                if (!tx) continue;
+                parts.push(tx); (f ? finalParts : interimParts).push(tx); lastFinal = f;
+            }
+            try { window.__kltSpeechLog.push({ t: Date.now(), ri: e.resultIndex, r: Array.from(e.results).map(r => [r[0].transcript, r.isFinal]) }); if (window.__kltSpeechLog.length > 300) window.__kltSpeechLog.shift(); } catch (x) {}
+            // Android Chrome repeats earlier text inside later results: use the longest one only.
+            const joined = IS_ANDROID ? parts.reduce((a, b) => (b.length > a.length ? b : a), '') : parts.join(' ');
+            liveWords = joined.split(' ').filter(Boolean);
+            realign();
+            const hasInterim = interimParts.length > 0;
+            if (!hasInterim) {
+                clearWatch();
+                sendUpTo(liveWords.length);                       // everything confirmed
+            } else {
+                // confirmed words up to the interim part are safe; hold back the last words of the interim
+                const stable = liveWords.length - HOLD_WORDS;
+                if (stable - sentWords >= COMMIT_WORDS) sendUpTo(stable);
+                else if (stable - sentWords >= MIN_TIMED_WORDS && Date.now() - lastSendAt >= SEND_EVERY_MS) sendUpTo(stable);
+                window.noteSpeechActivity(); armWatch();
             }
             document.getElementById('stsTxt').textContent = hasInterim ? t('statusSpeechDetected') : t('statusListening');
-            const interimText = lastResults.filter(r => !r.final).map(r => r.text).join(' ');
-            const finalText = lastResults.slice(e.resultIndex).filter(r => r.final).map(r => r.text).join(' ');
+            const interimText = interimParts.join(' ');
+            const finalText = finalParts.join(' ');
             spEmit('recognition-interim', { interim: interimText, final: finalText, transcript: finalText });
-            if (hasInterim) { window.noteSpeechActivity(); armWatch(); } else clearWatch();
         };
 
         recognition.onnomatch = () => { console.warn('[v4.6] No match'); document.getElementById('stsTxt').textContent = '🎤 No match — try speaking louder...'; };
