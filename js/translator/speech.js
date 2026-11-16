@@ -29,7 +29,9 @@ async function startListen() {
         recognition = new SR(); recognition.continuous = true; recognition.interimResults = true;
         recognition.lang = document.getElementById('srcLang').value;
         if (IS_ANDROID) recognition.maxAlternatives = 1;
-        if (!IS_ANDROID) {
+        // "Enhanced noise filter" off → don't open a second, processed mic stream at all,
+        // so nothing can filter what Chrome's recognizer hears (best for a distant speaker).
+        if (!IS_ANDROID && !(window.cfg && window.cfg.noiseFilter === false)) {
             // echoCancellation OFF: it removes sound played by this device itself (e.g. a video
             // of the speaker), so the recognizer barely heard it. KLT never plays through the speaker.
             const audioConstraints = { echoCancellation: false, noiseSuppression: true, autoGainControl: true, channelCount: 1, sampleRate: { ideal: 16000 }, latency: { ideal: 0 } };

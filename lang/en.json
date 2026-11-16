@@ -83,7 +83,7 @@
   "setMicSensitivity": "Mic sensitivity:",
   "setKeepScreen": "Keep screen on while listening",
   "setNoiseFilter": "Enhanced noise filter (mosque/outdoor mode)",
-  "setNoiseFilterHint": "Applies highpass + lowpass filters to isolate speech and remove background noise like AC hum, crowd murmur, and echo.",
+  "setNoiseFilterHint": "Filters the microphone sound. If the speaker is far away or many words are missed, turn this OFF so speech recognition hears the plain microphone.",
   "setVoiceBoost": "Voice boost:",
   "setVoiceBoostHint": "Amplifies the speech signal before recognition. Increase if the speaker is far from the mic or the environment is very loud.",
   "setNoiseGate": "Noise gate:",
