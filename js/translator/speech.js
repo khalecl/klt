@@ -34,7 +34,26 @@ async function startListen() {
             runViz(stream); setupRecorder(processedStream || stream);
         }
         if (cfg.wakeLock) await reqWakeLock();
-        let restarts = 0;
+        let restarts = 0, running = false;
+        // Self-healing: Chrome refuses to restart recognition while the tab is in
+        // the background, so restarts fail there and used to give up. A health
+        // check restarts it whenever we should be listening but are not, and
+        // returning to the tab resets the retry budget.
+        if (window.__kltHealth) clearInterval(window.__kltHealth);
+        if (window.__kltVis) document.removeEventListener('visibilitychange', window.__kltVis);
+        window.__kltHealth = setInterval(() => {
+            if (!isListening) { clearInterval(window.__kltHealth); return; }
+            if (!running && !document.hidden && !recognitionRestarting) {
+                console.log('[speech] health check: recognizer not running → restarting');
+                restarts = 0; safeStartRecognition();
+            }
+        }, 3000);
+        window.__kltVis = () => {
+            if (document.hidden || !isListening) return;
+            restarts = 0; recognitionRestarting = false;
+            if (!running) { console.log('[speech] tab visible again → restarting mic'); safeStartRecognition(); }
+        };
+        document.addEventListener('visibilitychange', window.__kltVis);
         // ── Long-speech + frozen-recognizer handling ─────────────────────────
         // Browsers confirm (final) words only at a pause, sometimes never, and
         // Chrome can freeze on an unconfirmed result. We therefore track how much
@@ -74,7 +93,7 @@ async function startListen() {
         };
         const rescueInterim = () => { clearWatch(); flushInterims(); sent = {}; lastResults = []; };
 
-        recognition.onstart = () => { isListening = true; restarts = 0; recognitionRestarting = false; updMicUI(true); spEmit('recognition-start', null); console.log('[v4.6] Recognition started on', IS_ANDROID ? 'Android' : 'Desktop/iOS'); if (IS_ANDROID && !stream) console.log('[v4.6] Android: skipping getUserMedia'); };
+        recognition.onstart = () => { running = true; isListening = true; restarts = 0; recognitionRestarting = false; updMicUI(true); spEmit('recognition-start', null); console.log('[v4.6] Recognition started on', IS_ANDROID ? 'Android' : 'Desktop/iOS'); if (IS_ANDROID && !stream) console.log('[v4.6] Android: skipping getUserMedia'); };
 
         recognition.onresult = (e) => {
             restarts = 0;
@@ -106,13 +125,15 @@ async function startListen() {
             if (e.error !== 'no-speech') rescueInterim();
             console.warn('[v4.6] Recognition error:', e.error, e.message || '');
             if ((e.error === 'no-speech' || e.error === 'audio-capture' || e.error === 'network') && isListening && restarts < 15) { restarts++; setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY * 2); }
+            else if (e.error === 'not-allowed' && (document.hidden || running === false && restarts > 0)) { console.log('[speech] mic blocked while tab in background — will resume when visible'); }
             else if (e.error === 'not-allowed') { alert('Microphone permission denied.'); stopListen(); }
             else if (e.error === 'language-not-supported') { alert('Language not supported for speech recognition on your device.'); stopListen(); }
             else if (e.error === 'aborted' && isListening && restarts < 15) { restarts++; setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY * 3); }
         };
-        recognition.onend = () => { console.log('[v4.6] Recognition ended, isListening:', isListening); // Keep unconfirmed words; no forced flush (segmentation owns timing).
+        recognition.onend = () => { running = false; console.log('[v4.6] Recognition ended, isListening:', isListening); // Keep unconfirmed words; no forced flush (segmentation owns timing).
         rescueInterim();
-        if (isListening) setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY); };
+        // In a background tab Chrome refuses restarts; wait for the tab to be visible.
+        if (isListening && !document.hidden) setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY); };
 
         if (IS_ANDROID) { setTimeout(() => { try { recognition.start(); console.log('[v4.6] Android: recognition.start() called (deferred)'); } catch(e) { console.error('[v4.6] Android start failed:', e); } }, 50); }
         else recognition.start();
