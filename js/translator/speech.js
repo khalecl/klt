@@ -62,22 +62,27 @@ async function startListen() {
         //   • stable chunks of a long interim (every ~90 chars, last 2 words held);
         //   • the whole interim if it stops changing (watchdog);
         // and restart the recognizer if it stays frozen.
-        const COMMIT_CHARS = 90, HOLD_WORDS = 2;
-        let sent = {}, lastResults = [];          // sent[i] = chars of result i already sent
+        // Tracking is by WORD count per result (not characters): when Chrome
+        // corrects earlier words the count barely moves, so we never cut a word
+        // in half or skip words.
+        const COMMIT_WORDS = 12, HOLD_WORDS = 2;
+        let sent = {}, lastResults = [];          // sent[i] = words of result i already sent; -1 = done
         let stableTimer = null, stallTimer = null;
         const norm = (x) => (x || '').replace(/\s+/g, ' ').trim();
         const send = (txt) => { txt = norm(txt); if (txt) window.pushFragment(txt, { isFinal: true }); };
-        const sendFrom = (i, text, upto) => {     // send text[sent[i] .. upto), word-aligned
-            const from = sent[i] || 0;
-            if (upto <= from) return;
-            let start = from;
-            if (from > 0 && from < text.length && text[from - 1] !== ' ') {   // engine revised: realign to next word
-                const sp = text.indexOf(' ', from); start = sp === -1 ? upto : sp;
-            }
-            send(text.slice(start, upto)); sent[i] = upto;
+        const sendWords = (i, text, upto) => {    // send words [sent[i], upto)
+            const words = norm(text).split(' ').filter(Boolean);
+            const from = Math.max(0, sent[i] || 0);
+            upto = Math.min(upto == null ? words.length : upto, words.length);
+            if (upto > from) send(words.slice(from, upto).join(' '));
+            sent[i] = Math.max(from, upto);
         };
         const flushInterims = (why) => {          // send everything not yet sent
-            lastResults.forEach((r, i) => { if (!r.final) { const tx = norm(r.text); if (tx.length > (sent[i] || 0)) { if (why) console.log('[speech] ' + why + ':', tx.slice(sent[i] || 0, (sent[i] || 0) + 50)); sendFrom(i, tx, tx.length); } } });
+            lastResults.forEach((r, i) => {
+                if (r.final || sent[i] === -1) return;
+                const n = r.text ? r.text.split(' ').length : 0;
+                if (n > (sent[i] || 0)) { if (why) console.log('[speech] ' + why + ':', r.text.split(' ').slice(sent[i] || 0).join(' ').slice(0, 60)); sendWords(i, r.text); }
+            });
         };
         const clearWatch = () => { clearTimeout(stableTimer); clearTimeout(stallTimer); };
         const armWatch = () => {
@@ -103,14 +108,12 @@ async function startListen() {
                 const text = norm(e.results[i][0].transcript), isFinal = e.results[i].isFinal;
                 lastResults.push({ text: text, final: isFinal });
                 if (i < e.resultIndex) continue;
-                if (isFinal) { if (sent[i] !== -1) { sendFrom(i, text, text.length); sent[i] = -1; } }   // -1 = done
+                if (isFinal) { if (sent[i] !== -1) { sendWords(i, text); sent[i] = -1; } }
                 else {
                     hasInterim = true;
                     if (sent[i] === -1) sent[i] = 0;
-                    if (text.length - (sent[i] || 0) >= COMMIT_CHARS) {
-                        const words = text.slice(sent[i] || 0).split(' ');
-                        if (words.length > HOLD_WORDS) sendFrom(i, text, (sent[i] || 0) + words.slice(0, words.length - HOLD_WORDS).join(' ').length);
-                    }
+                    const n = text ? text.split(' ').length : 0, stable = n - HOLD_WORDS;
+                    if (stable - (sent[i] || 0) >= COMMIT_WORDS) sendWords(i, text, stable);
                 }
             }
             document.getElementById('stsTxt').textContent = hasInterim ? t('statusSpeechDetected') : t('statusListening');

@@ -4,7 +4,7 @@
 
 function updApiUI() {
     const dot = document.getElementById('apiDot'), label = document.getElementById('apiLabel');
-    const total = apiStats.lingvaOk + apiStats.mmOk + apiStats.cacheHit, fails = apiStats.lingvaFail + apiStats.mmFail;
+    const total = apiStats.lingvaOk + apiStats.mmOk + apiStats.cacheHit + (apiStats.gtxOk || 0) + (apiStats.offlineOk || 0), fails = apiStats.lingvaFail + apiStats.mmFail;
     if (fails === 0 || total > fails * 3) { dot.className = 'api-dot ok'; label.textContent = `API OK · ${total} translated`; }
     else if (total > fails) { dot.className = 'api-dot warn'; label.textContent = `Fallback active · ${total} ok`; }
     else { dot.className = 'api-dot err'; label.textContent = `API issues · ${fails} errors`; }

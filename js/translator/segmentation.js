@@ -280,7 +280,7 @@ export function pushFragment(text, options) {
         const p = matchable(seg.pending);
         const c = matchable(clean);
         if (p === c) return null;                 // exact repeat
-        if (p.endsWith(c)) return null;           // already contained at the tail
+        if (c.length >= 20 && p.endsWith(c)) return null;   // repeated tail (long only: short words legitimately repeat)
         if (c.indexOf(p) === 0) {                 // superset: replace, don't append
             seg.pending = clean;
             armTimers();
@@ -326,7 +326,11 @@ export function flushSegment(reason, force) {
     const text = norm(seg.pending);
 
     if (!always) {
-        if (text.length < MIN_SEGMENT_CHARS) return null;
+        if (text.length < MIN_SEGMENT_CHARS) {
+            // Too short alone — wait for more speech, but never strand it.
+            if (!seg.bufferTimer) seg.bufferTimer = setTimeout(function () { seg.bufferTimer = null; flushSegment('manual'); }, bufferSeconds() * 1000);
+            return null;
+        }
         if (!canSplit(text)) {
             // Mid-phrase: give it more room rather than break meaning.
             if (seg.silenceTimer) clearTimeout(seg.silenceTimer);

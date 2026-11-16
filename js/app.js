@@ -225,6 +225,8 @@ window.clearAll = function () {
     const result = _origClearAll.apply(this, arguments);
     if (before && window.translations.length === 0) {
         try { window.resetSession(); } catch (e) { console.warn('[session] reset', e); }
+        // Still listening: begin a fresh session so recording continues.
+        try { if (window.isListening) window.startSession(); } catch (e) { console.warn('[session] restart', e); }
     }
     return result;
 };
