@@ -30,7 +30,9 @@ async function startListen() {
         recognition.lang = document.getElementById('srcLang').value;
         if (IS_ANDROID) recognition.maxAlternatives = 1;
         if (!IS_ANDROID) {
-            const audioConstraints = { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1, sampleRate: { ideal: 16000 }, latency: { ideal: 0 } };
+            // echoCancellation OFF: it removes sound played by this device itself (e.g. a video
+            // of the speaker), so the recognizer barely heard it. KLT never plays through the speaker.
+            const audioConstraints = { echoCancellation: false, noiseSuppression: true, autoGainControl: true, channelCount: 1, sampleRate: { ideal: 16000 }, latency: { ideal: 0 } };
             stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
             runViz(stream); setupRecorder(processedStream || stream);
         }
