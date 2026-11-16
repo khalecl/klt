@@ -1,7 +1,7 @@
 /* Khutbah Live Translator — sw.js (v5.1)
    Network-first for the app's own files, cache fallback when offline.
    Translation APIs and other sites are never cached. */
-const CACHE = 'klt-shell-v2';
+const CACHE = 'klt-shell-v3';
 
 self.addEventListener('install', function (e) { self.skipWaiting(); });
 self.addEventListener('activate', function (e) {

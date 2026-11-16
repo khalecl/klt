@@ -34,7 +34,11 @@ async function startListen() {
             runViz(stream); setupRecorder(processedStream || stream);
         }
         if (cfg.wakeLock) await reqWakeLock();
-        let restarts = 0;
+        let restarts = 0, lastInterim = '';
+        // Unconfirmed (interim) words. During long unbroken speech the browser can
+        // end/restart recognition before confirming them and silently drop them,
+        // so we hand them to segmentation ourselves.
+        const rescueInterim = () => { const t = lastInterim.trim(); lastInterim = ''; if (t) window.pushFragment(t, { isFinal: true }); };
 
         recognition.onstart = () => { isListening = true; restarts = 0; recognitionRestarting = false; updMicUI(true); spEmit('recognition-start', null); console.log('[v4.6] Recognition started on', IS_ANDROID ? 'Android' : 'Desktop/iOS'); if (IS_ANDROID && !stream) console.log('[v4.6] Android: skipping getUserMedia'); };
 
@@ -46,19 +50,22 @@ async function startListen() {
             spEmit('recognition-interim', { interim: interim, final: final, transcript: final });
             // Segmentation owns all timing (pause / buffer / max length).
             // Finals become fragments; interims only keep the silence timer alive.
+            lastInterim = interim;
             if (final.trim()) window.pushFragment(final.trim(), { isFinal: true });
             else if (interim) window.noteSpeechActivity();
         };
 
         recognition.onnomatch = () => { console.warn('[v4.6] No match'); document.getElementById('stsTxt').textContent = '🎤 No match — try speaking louder...'; };
         recognition.onerror = (e) => {
+            if (e.error !== 'no-speech') rescueInterim();
             console.warn('[v4.6] Recognition error:', e.error, e.message || '');
             if ((e.error === 'no-speech' || e.error === 'audio-capture' || e.error === 'network') && isListening && restarts < 15) { restarts++; setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY * 2); }
             else if (e.error === 'not-allowed') { alert('Microphone permission denied.'); stopListen(); }
             else if (e.error === 'language-not-supported') { alert('Language not supported for speech recognition on your device.'); stopListen(); }
             else if (e.error === 'aborted' && isListening && restarts < 15) { restarts++; setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY * 3); }
         };
-        recognition.onend = () => { console.log('[v4.6] Recognition ended, isListening:', isListening); // No flush here: recognition restarts mid-sentence; segmentation keeps the buffer.
+        recognition.onend = () => { console.log('[v4.6] Recognition ended, isListening:', isListening); // Keep unconfirmed words; no forced flush (segmentation owns timing).
+        rescueInterim();
         if (isListening) setTimeout(() => { if (isListening) safeStartRecognition(); }, RESTART_DELAY); };
 
         if (IS_ANDROID) { setTimeout(() => { try { recognition.start(); console.log('[v4.6] Android: recognition.start() called (deferred)'); } catch(e) { console.error('[v4.6] Android start failed:', e); } }, 50); }
