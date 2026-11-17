@@ -272,12 +272,16 @@ export function restoreSession() {
         if (!saved || !saved.id) return null;
         const s = store();
         s.current = saved;
-        // A restored session is never resumed automatically — the user decides.
-        s.status = (saved.status === SESSION_STATUS.COMPLETED)
-            ? SESSION_STATUS.COMPLETED
-            : SESSION_STATUS.PAUSED;
+        // Reopening the app always starts clean: an unfinished session is
+        // finished and saved to history (if it has content), then cleared, so
+        // the timer and counters never continue from a previous visit.
+        s.status = (saved.status === SESSION_STATUS.COMPLETED) ? SESSION_STATUS.COMPLETED : SESSION_STATUS.PAUSED;
         s.current.status = s.status;
-        return s.current;
+        const hasContent = (saved.segments && saved.segments.length) || (saved.translations && saved.translations.length);
+        if (s.status !== SESSION_STATUS.COMPLETED && hasContent) endSession();
+        resetSession();
+        console.log('[session] previous session closed on reopen');
+        return null;
     } catch (e) {
         console.warn('[session] restore failed', e);
         return null;

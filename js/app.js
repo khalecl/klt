@@ -301,6 +301,22 @@ function initApp() {
 
     // ── 5b. Restore a persisted session, if one exists ───────────────
     //      Restored sessions come back PAUSED — never auto-resumed.
+    // Phone locked / app in background for a long time (no reload): when it
+    // comes back after more than 30 min, close the old session and start fresh.
+    step('session idle reset', () => {
+        let hiddenAt = 0;
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) { hiddenAt = Date.now(); return; }
+            if (!hiddenAt || Date.now() - hiddenAt < 30 * 60 * 1000) return;
+            hiddenAt = 0;
+            try {
+                if (!window.getCurrentSession()) return;
+                window.endSession(); window.resetSession();
+                if (window.isListening) window.startSession();
+                console.log('[session] away > 30 min — started a new session');
+            } catch (e) { console.warn('[session] idle reset', e); }
+        });
+    });
     step('session restore', () => {
         if (typeof window.restoreSession === 'function') window.restoreSession();
     });
