@@ -35,8 +35,12 @@ async function startListen() {
             // echoCancellation OFF: it removes sound played by this device itself (e.g. a video
             // of the speaker), so the recognizer barely heard it. KLT never plays through the speaker.
             const audioConstraints = { echoCancellation: false, noiseSuppression: true, autoGainControl: true, channelCount: 1, sampleRate: { ideal: 16000 }, latency: { ideal: 0 } };
-            stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
-            runViz(stream); setupRecorder(processedStream || stream);
+            // This stream only feeds the visualiser/recorder — the recognizer opens its own mic.
+            // If it fails (iOS second-stream refusal, constraint error…) keep going without it.
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+                runViz(stream); setupRecorder(processedStream || stream);
+            } catch (gumErr) { stream = null; console.warn('[speech] page mic stream unavailable, recognizer only:', gumErr && gumErr.message); }
         }
         if (cfg.wakeLock) await reqWakeLock();
         let restarts = 0, running = false;

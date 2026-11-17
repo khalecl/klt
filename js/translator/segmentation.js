@@ -319,7 +319,10 @@ function maybeFlush() {
  */
 export function flushSegment(reason, force) {
     const why = reason || 'manual';
-    const always = force || why === 'manual' || why === 'session-end' || why === 'max-length';
+    // max-buffer is the hard cap (cfg.bufferTime): without it, text ending inside a
+    // protected formula (Arabic recognition has no punctuation, so "…صلى الله عليه وسلم"
+    // never "terminates") re-armed its silence timer forever and was never translated.
+    const always = force || why === 'manual' || why === 'session-end' || why === 'max-length' || why === 'max-buffer';
 
     if (!seg.pending) { clearTimers(); return null; }
 
