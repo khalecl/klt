@@ -241,3 +241,15 @@
         .session-lbl { display: none; }
         .session-btn { min-width: 0; padding: 8px 6px; }
     }
+
+    /* === Start-up indicator (ui/startup-status.js) === */
+    .mic.starting{animation:none}
+    .mic.starting::after{
+        content:'';position:absolute;inset:-6px;border-radius:50%;
+        border:3px solid transparent;border-top-color:var(--gold);border-right-color:var(--gold);
+        animation:mic-spin .9s linear infinite;
+    }
+    @keyframes mic-spin{to{transform:rotate(360deg)}}
+    .sts.sts-busy .sts-txt::after{content:'';display:inline-block;width:1.2em;text-align:left;animation:sts-dots 1.2s steps(4) infinite}
+    @keyframes sts-dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+    .sts.sts-busy .sts-dot{background:var(--gold);animation:dot-glow 1s infinite}

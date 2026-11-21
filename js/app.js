@@ -67,6 +67,7 @@ import './ui/dialogs.js';
 import './ui/notifications.js';
 import './ui/session-ui.js';
 import './ui/speak.js';
+import './ui/startup-status.js';
 
 /* ══════════════════════════════════════════════
    DECORATORS

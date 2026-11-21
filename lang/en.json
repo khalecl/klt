@@ -176,5 +176,13 @@
   "pLabelMethod": "Calculation method",
   "setSpeak": "🎧 Speak translation (earphones)",
   "setSpeakRate": "Voice speed:",
-  "setSpeakHint": "Use wired earphones. Bluetooth earbuds may take over the microphone, and the loudspeaker will be picked up by the mic."
+  "setSpeakHint": "Use wired earphones. Bluetooth earbuds may take over the microphone, and the loudspeaker will be picked up by the mic.",
+  "setSpeakVoice": "Voice:",
+  "setSpeakTest": "▶ Test voice",
+  "startupStarting": "Starting microphone",
+  "startupStartingSlow": "Still starting — allow microphone access if asked",
+  "startupWaiting": "Ready — waiting for the speaker",
+  "startupWaitingSlow": "Nothing heard yet — move the phone closer to the speaker",
+  "startupHearing": "Hearing speech",
+  "startupTranslating": "Translating the first sentence"
 }

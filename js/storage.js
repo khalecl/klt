@@ -58,6 +58,8 @@ function applySettings() {
     document.querySelectorAll('input[name=engine]').forEach(r => { r.checked = r.value === cfg.engine; });
     const sp = document.getElementById('sSpeak'); if (sp) sp.checked = !!cfg.speak;
     const sr = document.getElementById('sSpeakRate'); if (sr) { sr.value = cfg.speakRate || 1.1; document.getElementById('speakRateVal').textContent = sr.value; }
+    if (window.fillVoiceSelect) window.fillVoiceSelect();
+    const sv = document.getElementById('sSpeakVoice'); if (sv && cfg.speakVoice && [...sv.options].some(o => o.value === cfg.speakVoice)) sv.value = cfg.speakVoice;
 }
 function saveSettings(silent) {
     cfg.instant = document.getElementById('sInstant').checked; cfg.autoScroll = document.getElementById('sAutoScroll').checked;
@@ -69,6 +71,7 @@ function saveSettings(silent) {
     cfg.noiseGate = parseInt(document.getElementById('sGate').value);
     const sp = document.getElementById('sSpeak'); if (sp) cfg.speak = sp.checked;
     const sr = document.getElementById('sSpeakRate'); if (sr) cfg.speakRate = parseFloat(sr.value);
+    const sv = document.getElementById('sSpeakVoice'); if (sv) cfg.speakVoice = sv.value;
     if (audioNodes.gain) audioNodes.gain.gain.value = cfg.voiceGain;
     try { localStorage.setItem('kht_cfg_v3', JSON.stringify(cfg)); } catch(e) {}renderTranslations(); // Re-render so showOrig/highlight changes apply immediately
     if (!silent)alert('Settings saved ✓\nNoise filter & gate changes take effect next time you start listening.');
