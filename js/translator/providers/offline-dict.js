@@ -8,7 +8,9 @@
    LIFECYCLE
      1. First page open: all four JSON files download in the background,
         one after another, and are saved in IndexedDB.
-     2. Later opens: nothing is downloaded unless meta.version changed.
+     2. Later opens: only dict/versions.json is fetched; a pair downloads
+        again only when its version there changed (bump it with meta.version).
+        Work starts 15 s after load and never while the mic is listening.
      3. A pair is parsed into memory only the first time it is needed,
         so a phone translating only ar→en never holds the Russian maps.
 
@@ -91,25 +93,51 @@ function install(pair, data) {
 }
 
 /** Download every pair once and keep it in IndexedDB. Background only. */
+// Stored versions are remembered in localStorage so startup never has to read
+// the big dictionaries back out of IndexedDB just to learn their version.
+// dict/versions.json (a few bytes) says what is current — the 21 MB of JSON is
+// downloaded only when a version changed. Previously every page open downloaded
+// and parsed all four files, freezing the phone for seconds right at the start.
+const VER_KEY = 'klt_dict_versions';
+const START_DELAY_MS = 15000;      // let the page and the mic settle first
+function readVers() { try { return JSON.parse(localStorage.getItem(VER_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function writeVers() { try { localStorage.setItem(VER_KEY, JSON.stringify(od.stored)); } catch (e) {} }
+function whenNotListening() {
+    return new Promise(function (res) {
+        (function check() { if (!window.isListening) res(); else setTimeout(check, 30000); })();
+    });
+}
+
 function loadOfflineDict() {
     if (od.loading) return od.loading;
     od.loading = (async function () {
+        Object.assign(od.stored, readVers());          // instant "dict ready" for offline mode
+        let current = null;
+        if (navigator.onLine !== false) {
+            try {
+                const r = await fetch(DICT_BASE + 'versions.json', { cache: 'no-cache' });
+                if (r.ok) current = await r.json();
+            } catch (e) {}
+        }
         for (const pair of DICT_PAIRS) {
-            const stored = await idbGet(pair);
-            if (stored && stored.meta) od.stored[pair] = stored.meta.version;
+            if (!od.stored[pair]) {                    // first run after this update: one-time check
+                const stored = await idbGet(pair);
+                if (stored && stored.meta) { od.stored[pair] = stored.meta.version; writeVers(); }
+            }
+            const want = current && current[pair];
+            if (od.stored[pair] && (!want || want === od.stored[pair])) continue;   // up to date
             if (navigator.onLine === false) continue;
+            await whenNotListening();                  // never parse megabytes during a khutbah
             try {
                 const res = await fetch(DICT_BASE + pair + '.json', { cache: 'no-cache' });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
-                if (!stored || !stored.meta || stored.meta.version !== data.meta.version) {
-                    const ok = await idbPut(pair, data);
-                    od.stored[pair] = data.meta.version;
-                    delete od.pairs[pair];                     // re-parse new version on next use
-                    console.log('[offline-dict] ' + pair + (ok ? ' stored in browser' : ' could not be stored'));
-                }
+                const ok = await idbPut(pair, data);
+                if (ok) { od.stored[pair] = data.meta.version; writeVers(); }
+                delete od.pairs[pair];                     // re-parse new version on next use
+                console.log('[offline-dict] ' + pair + (ok ? ' stored in browser' : ' could not be stored'));
             } catch (e) {
-                if (!stored) console.warn('[offline-dict] ' + pair + ' download failed:', e.message);
+                if (!od.stored[pair]) console.warn('[offline-dict] ' + pair + ' download failed:', e.message);
             }
         }
         try { window.dispatchEvent(new CustomEvent('khutbah:offline-dict-ready', { detail: Object.assign({}, od.stored) })); } catch (e) {}
@@ -219,7 +247,7 @@ function isOfflineDictReady(src, tgt) {
 }
 function offlineDictPairs() { return DICT_PAIRS.slice(); }
 
-if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') setTimeout(loadOfflineDict, 0);
+if (typeof window !== 'undefined' && typeof indexedDB !== 'undefined') setTimeout(loadOfflineDict, START_DELAY_MS);
 
 Object.assign(window, { tryOfflineDict, loadOfflineDict, isOfflineDictReady, offlineDictPairs });
 export { tryOfflineDict, loadOfflineDict, isOfflineDictReady, offlineDictPairs };
